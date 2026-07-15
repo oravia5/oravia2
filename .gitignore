@@ -1,0 +1,21 @@
+# Database and local binaries
+mongodb/
+data/
+
+# Dependency directories
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files (contains secrets)
+backend/.env
+.env
+
+# Logs and temp files
+*.log
+stdout.txt
+stderr.txt
+
+# Uploads
+backend/uploads/
+backend/uploads_test/
