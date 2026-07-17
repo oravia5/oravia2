@@ -1,6 +1,8 @@
 import express from 'express';
 import {
   getFeed,
+  getFollowingFeed,
+  getNearYouFeed,
   createPost,
   getPostById,
   deletePost,
@@ -17,13 +19,15 @@ import {
   archivePost,
   unarchivePost,
 } from '../controllers/posts.controller.js';
-import { protect } from '../middleware/auth.middleware.js';
+import { protect, optionalAuth } from '../middleware/auth.middleware.js';
 import { validateUploadLimit, postUpload } from '../middleware/upload.middleware.js';
 
 const router = express.Router();
 
 router.get('/', protect, getPosts);
-router.get('/feed', protect, getFeed);
+router.get('/feed', optionalAuth, getFeed);
+router.get('/following', protect, getFollowingFeed);
+router.get('/near-you', optionalAuth, getNearYouFeed);
 router.get('/tag/:tag', getPostsByHashtag);
 router.get('/location-feed/:location', getPostsByLocation);
 router.get('/search-posts', protect, searchPosts);

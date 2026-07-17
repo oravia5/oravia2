@@ -1,14 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, MessageCircle, Share2, Bookmark, Play, Volume2, Film } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
+import AuthDrawer from '../AuthDrawer/AuthDrawer';
 
 export default function ReelCard({ reel }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const videoRef = useRef(null);
+
+  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [drawerAction, setDrawerAction] = useState('interact with posts');
 
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -65,6 +69,11 @@ export default function ReelCard({ reel }) {
 
   const handleLike = async (e) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('like snips');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const res = await client.post(`/posts/${reel._id}/like`);
       if (res.data.success) {
@@ -76,8 +85,31 @@ export default function ReelCard({ reel }) {
     }
   };
 
+  const handleDislike = async (e) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('dislike snips');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
+    try {
+      const res = await client.post(`/posts/${reel._id}/dislike`);
+      if (res.data.success) {
+        setLikes(res.data.data.likes);
+        setDislikes(res.data.data.dislikes);
+      }
+    } catch (err) {
+      console.error('Error disliking reel:', err);
+    }
+  };
+
   const handleSave = async (e) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('save snips');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const endpoint = isSaved ? `/posts/${reel._id}/unsave` : `/posts/${reel._id}/save`;
       const res = await client.post(endpoint);
@@ -174,6 +206,11 @@ export default function ReelCard({ reel }) {
 
       {/* Media Block */}
       <div className="reel-media-container" onClick={handleMediaClick}>
+        {reel.isReal && (
+          <div className="reel-real-badge-overlay">
+            <Camera size={12} style={{ marginRight: '4px' }} /> Real
+          </div>
+        )}
         {reel.thumbnailUrl || reel.mediaUrl ? (
           <>
             <video
@@ -218,8 +255,25 @@ export default function ReelCard({ reel }) {
           </button>
 
           <button
+            className={`action-btn ${isDisliked ? 'disliked' : ''}`}
+            onClick={handleDislike}
+            aria-label="Dislike"
+          >
+            <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
+            <span>{dislikes.length}</span>
+          </button>
+
+          <button
             className="action-btn"
-            onClick={(e) => { e.stopPropagation(); setShowComments(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isAuthenticated) {
+                setDrawerAction('comment on snips');
+                setIsAuthDrawerOpen(true);
+              } else {
+                setShowComments(true);
+              }
+            }}
             aria-label="Comment"
           >
             <MessageCircle size={22} />
@@ -312,7 +366,7 @@ export default function ReelCard({ reel }) {
 
         .reel-header .author-username {
           font-size: 11px;
-          color: var(--text-secondary);
+          color: #ffffff;
         }
 
         .reel-media-container {
@@ -424,6 +478,10 @@ export default function ReelCard({ reel }) {
           color: var(--accent-violet);
         }
 
+        .reel-actions .action-btn.disliked {
+          color: var(--accent-indigo);
+        }
+
         .reel-actions .action-btn.saved {
           color: var(--accent-gold);
         }
@@ -450,7 +508,32 @@ export default function ReelCard({ reel }) {
           text-transform: uppercase;
           cursor: pointer;
         }
+
+        .reel-real-badge-overlay {
+          position: absolute;
+          top: 12px;
+          left: 60px;
+          z-index: 10;
+          display: inline-flex;
+          align-items: center;
+          background: linear-gradient(135deg, #FF8F00 0%, #d84315 100%);
+          color: #fff;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 4px 8px;
+          border-radius: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          box-shadow: 0 4px 12px rgba(255, 143, 0, 0.4);
+          line-height: 1;
+        }
       `}</style>
+      
+      <AuthDrawer 
+        isOpen={isAuthDrawerOpen} 
+        onClose={() => setIsAuthDrawerOpen(false)} 
+        actionText={drawerAction}
+      />
     </div>
   );
 }

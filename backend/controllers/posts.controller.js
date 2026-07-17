@@ -10,11 +10,91 @@ const escapeRegex = (string) => {
 };
 
 /**
- * @desc    Get home timeline (posts + reels mixed, prioritizing followed users)
+ * @desc    Get home timeline (For You: posts + reels mixed from everyone)
  * @route   GET /api/posts/feed
  * @access  Private
  */
 export const getFeed = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const { cursor } = req.query;
+
+    let allBlockedIds = [];
+    if (req.user) {
+      const userId = req.user._id;
+      const user = await User.findById(userId);
+      if (user) {
+        const blockedUsers = user.blockedUsers || [];
+        const usersWhoBlockedMeRes = await User.find({ blockedUsers: userId }, '_id');
+        const usersWhoBlockedMe = usersWhoBlockedMeRes.map(u => u._id.toString());
+        allBlockedIds = [...blockedUsers.map(id => id.toString()), ...usersWhoBlockedMe];
+      }
+    }
+
+    // Fetch all posts from everyone except blocked/blocking users
+    const query = {
+      isArchived: { $ne: true },
+      status: { $ne: 'draft' },
+    };
+    if (allBlockedIds.length > 0) {
+      query.author = { $nin: allBlockedIds };
+    }
+    if (cursor) {
+      query.createdAt = { $lt: new Date(cursor) };
+    }
+
+    // Fetch limit + 1 items to see if there is a next page
+    let allPosts = await Post.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit + 1)
+      .populate('author', '_id username displayName avatarUrl');
+
+    const hasNextPage = allPosts.length > limit;
+    if (hasNextPage) {
+      allPosts.pop(); // Remove the extra item
+    }
+
+    const nextCursor = hasNextPage && allPosts.length > 0 ? allPosts[allPosts.length - 1].createdAt : null;
+
+    // Compute comment counts for all posts in the feed
+    const Comment = (await import('../models/Comment.js')).default;
+    const postIds = allPosts.map((p) => p._id);
+    const commentCounts = await Comment.aggregate([
+      { $match: { post: { $in: postIds } } },
+      { $group: { _id: '$post', count: { $sum: 1 } } },
+    ]);
+    const countMap = {};
+    commentCounts.forEach((c) => {
+      countMap[c._id.toString()] = c.count;
+    });
+
+    // Attach commentCount to each feed item as a plain object
+    const feedWithCounts = allPosts.map((p) => {
+      const obj = p.toObject();
+      obj.commentCount = countMap[p._id.toString()] || 0;
+      return obj;
+    });
+
+    res.json({
+      success: true,
+      data: feedWithCounts,
+      nextCursor,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching feed',
+    });
+  }
+};
+
+/**
+ * @desc    Get following timeline (Following: posts + reels from followed accounts + self)
+ * @route   GET /api/posts/following
+ * @access  Private
+ */
+export const getFollowingFeed = async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await User.findById(userId);
@@ -27,52 +107,21 @@ export const getFeed = async (req, res) => {
     const usersWhoBlockedMe = usersWhoBlockedMeRes.map(u => u._id.toString());
     const allBlockedIds = [...blockedUsers.map(id => id.toString()), ...usersWhoBlockedMe];
 
-    // 1. Fetch own posts + followed users' posts (excluding blocked ones)
-    const primaryAuthors = [userId, ...followedUsers].filter(id => !allBlockedIds.includes(id.toString()));
-    let primaryPosts = await Post.find({
-      author: { $in: primaryAuthors },
+    // Combine self and followed users, and exclude blocked/blocking ones
+    const allowedAuthors = [userId, ...followedUsers].filter(id => !allBlockedIds.includes(id.toString()));
+
+    // Fetch posts from these authors
+    const posts = await Post.find({
+      author: { $in: allowedAuthors },
       isArchived: { $ne: true },
       status: { $ne: 'draft' },
     })
       .sort({ createdAt: -1 })
       .populate('author', '_id username displayName avatarUrl');
 
-    // 2. Backfill with public/discover posts if not enough content
-    let discoverPosts = [];
-    if (primaryPosts.length < 20) {
-      discoverPosts = await Post.find({
-        author: { $nin: [...primaryAuthors, ...allBlockedIds] },
-        isArchived: { $ne: true },
-        status: { $ne: 'draft' },
-      })
-        .sort({ createdAt: -1 })
-        .limit(40 - primaryPosts.length)
-        .populate('author', '_id username displayName avatarUrl');
-    }
-
-    // Combine posts ensuring no duplicates
-    const allPostsCombined = [...primaryPosts, ...discoverPosts];
-
     // Separate regular posts (photo, video) and reels to structure the mixing
-    const regularPosts = allPostsCombined.filter((p) => p.type !== 'reel');
-    const reels = allPostsCombined.filter((p) => p.type === 'reel');
-
-    // If we don't have enough reels from primary/discover mix, fetch general public reels
-    if (reels.length < 5) {
-      const existingReelIds = reels.map((r) => r._id);
-      const publicReels = await Post.find({
-        type: 'reel',
-        author: { $nin: allBlockedIds },
-        _id: { $nin: existingReelIds },
-        isArchived: { $ne: true },
-        status: { $ne: 'draft' },
-      })
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .populate('author', '_id username displayName avatarUrl');
-      
-      reels.push(...publicReels);
-    }
+    const regularPosts = posts.filter((p) => p.type !== 'reel');
+    const reels = posts.filter((p) => p.type === 'reel');
 
     // Mix reels into the feed (every 5th item)
     const mixedFeed = [];
@@ -97,14 +146,16 @@ export const getFeed = async (req, res) => {
     // Compute comment counts for all posts in the feed
     const Comment = (await import('../models/Comment.js')).default;
     const postIds = mixedFeed.map((p) => p._id);
-    const commentCounts = await Comment.aggregate([
-      { $match: { post: { $in: postIds } } },
-      { $group: { _id: '$post', count: { $sum: 1 } } },
-    ]);
-    const countMap = {};
-    commentCounts.forEach((c) => {
-      countMap[c._id.toString()] = c.count;
-    });
+    let countMap = {};
+    if (postIds.length > 0) {
+      const commentCounts = await Comment.aggregate([
+        { $match: { post: { $in: postIds } } },
+        { $group: { _id: '$post', count: { $sum: 1 } } },
+      ]);
+      commentCounts.forEach((c) => {
+        countMap[c._id.toString()] = c.count;
+      });
+    }
 
     // Attach commentCount to each feed item as a plain object
     const feedWithCounts = mixedFeed.map((p) => {
@@ -113,18 +164,131 @@ export const getFeed = async (req, res) => {
       return obj;
     });
 
+    const isEmptyFollowing = followedUsers.length === 0 && posts.length === 0;
+
     res.json({
       success: true,
       data: feedWithCounts,
+      emptyFollowing: isEmptyFollowing,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: 'Server error fetching feed',
+      message: 'Server error fetching following feed',
     });
   }
 };
+
+/**
+ * @desc    Get near you feed based on user's location
+ * @route   GET /api/posts/near-you
+ * @access  Private
+ */
+export const getNearYouFeed = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const { cursor } = req.query;
+
+    let allBlockedIds = [];
+    let userLocation = req.query.city ? req.query.city.trim() : '';
+
+    if (req.user) {
+      const userId = req.user._id;
+      const user = await User.findById(userId);
+      if (user) {
+        const blockedUsers = user.blockedUsers || [];
+        const usersWhoBlockedMeRes = await User.find({ blockedUsers: userId }, '_id');
+        const usersWhoBlockedMe = usersWhoBlockedMeRes.map(u => u._id.toString());
+        allBlockedIds = [...blockedUsers.map(id => id.toString()), ...usersWhoBlockedMe];
+        if (!userLocation) {
+          userLocation = user.location ? user.location.trim() : '';
+        }
+      }
+    }
+
+    if (!userLocation) {
+      return res.json({
+        success: true,
+        data: [],
+        locationNotSet: true,
+      });
+    }
+
+    // Smart Matching: split user location by commas and search for posts whose location matches the city (first part of location string)
+    // E.g., "Andheri, Mumbai" -> matches "Mumbai"
+    const parts = userLocation.split(',').map(p => p.trim()).filter(Boolean);
+    const citySearch = parts[0] || '';
+
+    let posts = [];
+    let hasNextPage = false;
+    let nextCursor = null;
+
+    if (citySearch) {
+      const query = {
+        isArchived: { $ne: true },
+        status: { $ne: 'draft' },
+        location: { $regex: citySearch, $options: 'i' },
+      };
+      if (allBlockedIds.length > 0) {
+        query.author = { $nin: allBlockedIds };
+      }
+      if (cursor) {
+        query.createdAt = { $lt: new Date(cursor) };
+      }
+
+      posts = await Post.find(query)
+        .sort({ createdAt: -1 })
+        .limit(limit + 1)
+        .populate('author', '_id username displayName avatarUrl');
+
+      hasNextPage = posts.length > limit;
+      if (hasNextPage) {
+        posts.pop();
+      }
+      nextCursor = hasNextPage && posts.length > 0 ? posts[posts.length - 1].createdAt : null;
+    }
+
+    const noPostsFound = posts.length === 0 && !cursor;
+
+    // Compute comment counts for all posts in the feed
+    const Comment = (await import('../models/Comment.js')).default;
+    const postIds = posts.map((p) => p._id);
+    let countMap = {};
+    if (postIds.length > 0) {
+      const commentCounts = await Comment.aggregate([
+        { $match: { post: { $in: postIds } } },
+        { $group: { _id: '$post', count: { $sum: 1 } } },
+      ]);
+      commentCounts.forEach((c) => {
+        countMap[c._id.toString()] = c.count;
+      });
+    }
+
+    // Attach commentCount to each feed item as a plain object
+    const feedWithCounts = posts.map((p) => {
+      const obj = p.toObject();
+      obj.commentCount = countMap[p._id.toString()] || 0;
+      return obj;
+    });
+
+    res.json({
+      success: true,
+      data: feedWithCounts,
+      nextCursor,
+      locationNotSet: false,
+      noPostsForLocation: noPostsFound,
+      userLocation: userLocation,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching near you feed',
+    });
+  }
+};
+
 
 /**
  * Helper function to parse hashtags from caption text.
@@ -146,6 +310,7 @@ export const createPost = async (req, res) => {
   try {
     const { caption, location, album, status } = req.body;
     let { type } = req.body; // 'photo' or 'video'
+    const isReal = req.body.isReal === 'true';
 
     const mediaFiles = req.files && req.files['media'] ? req.files['media'] : [];
 
@@ -219,6 +384,9 @@ export const createPost = async (req, res) => {
     }
 
     const parsedTags = parseHashtags(caption);
+    if (isReal && !parsedTags.includes('real')) {
+      parsedTags.push('real');
+    }
 
     const post = await Post.create({
       author: req.user._id,
@@ -232,6 +400,7 @@ export const createPost = async (req, res) => {
       album: album ? album.trim() : '',
       tags: parsedTags,
       status: status || 'published',
+      isReal,
     });
 
     const populatedPost = await Post.findById(post._id).populate(

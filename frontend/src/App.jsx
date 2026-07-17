@@ -66,7 +66,7 @@ const AppLayout = () => {
     '/login', '/register', '/verify-otp', '/forgot-password', 
     '/edit-profile'
   ];
-  const showNav = isAuthenticated && !hideNavPaths.includes(location.pathname);
+  const showNav = !hideNavPaths.includes(location.pathname);
 
   return (
     <>
@@ -90,9 +90,11 @@ const AppLayout = () => {
         {/* Public Shared Post Route */}
         <Route path="/post/:id" element={<PostDetail />} />
 
+        {/* Public routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/snips" element={<Reels />} />
+
         {/* Protected routes */}
-        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/snips" element={<ProtectedRoute><Reels /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
         <Route path="/create-post" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
         <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />

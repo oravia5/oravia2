@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Image, Video, Plus, Trash2, MapPin, Sparkles, Upload, Pencil, Check, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Image, Video, Plus, Trash2, MapPin, Sparkles, Upload, Pencil, Check, ShoppingBag, Camera } from 'lucide-react';
 import client from '../api/client';
 import { useUpload } from '../context/UploadContext';
 import CaptionInput from '../components/CaptionInput/CaptionInput';
@@ -97,6 +97,7 @@ export default function CreatePost() {
   const [caption, setCaption] = useState(targetItem ? targetItem.caption : '');
   const [locationName, setLocationName] = useState(targetItem ? targetItem.location : '');
   const [isReel, setIsReel] = useState(targetItem ? targetItem.type === 'reel' : isReelMode);
+  const [captureSource, setCaptureSource] = useState('gallery'); // 'gallery' or 'camera'
   
   // Products state (list of affiliate products)
   const [products, setProducts] = useState(targetItem ? targetItem.products : []);
@@ -197,6 +198,16 @@ export default function CreatePost() {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
+      if (captureSource === 'camera') {
+        const file = files[0];
+        if (file) {
+          setSelectedFiles([file]);
+          setPreviewUrls([URL.createObjectURL(file)]);
+          setError('');
+        }
+        return;
+      }
+
       if (isReel) {
         const videoFile = files.find(f => f.type.startsWith('video/'));
         if (videoFile) {
@@ -457,6 +468,7 @@ export default function CreatePost() {
     const type = isReel ? 'reel' : (isVideo ? 'video' : 'photo');
     formData.append('type', type);
     formData.append('status', statusVal);
+    formData.append('isReal', captureSource === 'camera' ? 'true' : 'false');
 
     if (finalAlbum) {
       formData.append('album', finalAlbum);
@@ -591,6 +603,37 @@ export default function CreatePost() {
         </div>
       )}
 
+      {!targetItem && (
+        <div className="capture-source-selector">
+          <button
+            type="button"
+            className={`source-tab-btn ${captureSource === 'gallery' ? 'active' : ''}`}
+            onClick={() => {
+              setCaptureSource('gallery');
+              setSelectedFiles([]);
+              setPreviewUrls([]);
+              setError('');
+            }}
+            disabled={uploading}
+          >
+            Choose from Gallery
+          </button>
+          <button
+            type="button"
+            className={`source-tab-btn ${captureSource === 'camera' ? 'active' : ''}`}
+            onClick={() => {
+              setCaptureSource('camera');
+              setSelectedFiles([]);
+              setPreviewUrls([]);
+              setError('');
+            }}
+            disabled={uploading}
+          >
+            Capture Live Camera
+          </button>
+        </div>
+      )}
+
       <form onSubmit={handlePublish} className="create-post-form">
         {error && <div className="create-alert-banner error">{error}</div>}
 
@@ -620,7 +663,7 @@ export default function CreatePost() {
                   </div>
                 );
               })}
-              {!editPost && previewUrls.length < 10 && (
+              {!editPost && previewUrls.length < (captureSource === 'camera' ? 1 : 10) && (
                 <div className="add-more-media-card" onClick={() => fileInputRef.current.click()}>
                   <Plus size={24} />
                   <span>Add More</span>
@@ -630,18 +673,19 @@ export default function CreatePost() {
           ) : (
             <div className="media-upload-placeholder" onClick={() => fileInputRef.current.click()}>
               <div className="placeholder-icons">
-                {isReel ? <Video size={28} /> : <><Image size={28} /><Video size={28} /></>}
+                {isReel ? <Video size={28} /> : captureSource === 'camera' ? <Camera size={28} /> : <><Image size={28} /><Video size={28} /></>}
               </div>
-              <h5>{isReel ? 'Add a Video' : 'Add Photos or Videos'}</h5>
-              <p>{isReel ? 'Select a video file for your Snip' : 'Select up to 10 files (supports mixed images & videos)'}</p>
+              <h5>{isReel ? (captureSource === 'camera' ? 'Record a Snip' : 'Add a Video') : (captureSource === 'camera' ? 'Take a Photo' : 'Add Photos or Videos')}</h5>
+              <p>{isReel ? (captureSource === 'camera' ? 'Tap to open camera and record live video' : 'Select a video file for your Snip') : (captureSource === 'camera' ? 'Tap to open camera and snap a photo' : 'Select up to 10 files (supports mixed images & videos)')}</p>
             </div>
           )}
           <input 
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileChange} 
-            accept={isReel ? "video/*" : "image/*,video/*"} 
-            multiple={!isReel}
+            accept={captureSource === 'camera' ? (isReel ? "video/*" : "image/*") : (isReel ? "video/*" : "image/*,video/*")} 
+            capture={captureSource === 'camera' ? "environment" : undefined}
+            multiple={captureSource === 'camera' ? false : !isReel}
             style={{ display: 'none' }}
           />
         </div>
@@ -1035,6 +1079,42 @@ export default function CreatePost() {
           background: #0f0f11;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           margin-bottom: 20px;
+        }
+
+        .capture-source-selector {
+          display: flex;
+          background: #0f0f11;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          margin-bottom: 20px;
+          padding: 4px;
+          gap: 4px;
+          border-radius: 8px;
+          background-color: rgba(255, 255, 255, 0.03);
+          margin: 0 16px 20px 16px;
+        }
+
+        .source-tab-btn {
+          flex: 1;
+          background: none;
+          border: none;
+          color: #71717a;
+          padding: 10px 0;
+          font-family: 'Outfit', sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          border-radius: 6px;
+        }
+
+        .source-tab-btn:hover {
+          color: #ffffff;
+        }
+
+        .source-tab-btn.active {
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .type-tab-btn {

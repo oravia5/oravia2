@@ -84,6 +84,10 @@ const postSchema = new mongoose.Schema(
       enum: ['published', 'draft'],
       default: 'published',
     },
+    isReal: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

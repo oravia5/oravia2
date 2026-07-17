@@ -3,8 +3,8 @@ import axios from 'axios';
 // Dynamically determine the backend URL
 const getBaseUrl = () => {
   const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://127.0.0.1:5000/api';
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^[0-9.]+$/.test(hostname)) {
+    return `http://${hostname}:5000/api`;
   }
   return '/api'; // production path fallback
 };

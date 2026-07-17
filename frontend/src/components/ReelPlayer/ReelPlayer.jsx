@@ -4,9 +4,13 @@ import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volu
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
+import AuthDrawer from '../AuthDrawer/AuthDrawer';
 
 export default React.memo(function ReelPlayer({ reel, isActive }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  
+  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [drawerAction, setDrawerAction] = useState('interact with snips');
   
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -83,6 +87,11 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
 
   const handleLike = async (e) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('like snips');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const res = await client.post(`/posts/${reel._id}/like`);
       if (res.data.success) {
@@ -96,6 +105,11 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
 
   const handleDislike = async (e) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('dislike snips');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const res = await client.post(`/posts/${reel._id}/dislike`);
       if (res.data.success) {
@@ -109,6 +123,11 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
 
   const handleSave = async (e) => {
     e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('save snips');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const endpoint = isSaved ? `/posts/${reel._id}/unsave` : `/posts/${reel._id}/save`;
       const res = await client.post(endpoint);
@@ -180,37 +199,38 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
       {/* Actions Sidebar (Likes, Dislikes, Comments, Shares, Bookmark) */}
       <div className="reel-sidebar" onClick={(e) => e.stopPropagation()}>
         <button className={`sidebar-btn ${isLiked ? 'liked' : ''}`} onClick={handleLike} aria-label="Like">
-          <div className="icon-circle">
-            <Heart size={24} fill={isLiked ? 'currentColor' : 'none'} />
-          </div>
+          <Heart size={26} fill={isLiked ? 'currentColor' : 'none'} />
           <span>{likes.length}</span>
         </button>
 
         <button className={`sidebar-btn ${isDisliked ? 'disliked' : ''}`} onClick={handleDislike} aria-label="Dislike">
-          <div className="icon-circle">
-            <ThumbsDown size={24} fill={isDisliked ? 'currentColor' : 'none'} />
-          </div>
+          <ThumbsDown size={26} fill={isDisliked ? 'currentColor' : 'none'} />
           <span>{dislikes.length}</span>
         </button>
 
-        <button className="sidebar-btn" onClick={() => setShowComments(true)} aria-label="Comments">
-          <div className="icon-circle">
-            <MessageCircle size={24} />
-          </div>
+        <button 
+          className="sidebar-btn" 
+          onClick={() => {
+            if (!isAuthenticated) {
+              setDrawerAction('comment on snips');
+              setIsAuthDrawerOpen(true);
+            } else {
+              setShowComments(true);
+            }
+          }} 
+          aria-label="Comments"
+        >
+          <MessageCircle size={26} />
           <span>{commentCount}</span>
         </button>
 
         <button className="sidebar-btn" onClick={handleShare} aria-label="Share">
-          <div className="icon-circle">
-            <Share2 size={24} />
-          </div>
+          <Share2 size={26} />
           <span>{shareCount}</span>
         </button>
 
         <button className={`sidebar-btn ${isSaved ? 'saved' : ''}`} onClick={handleSave} aria-label="Save">
-          <div className="icon-circle">
-            <Bookmark size={24} fill={isSaved ? 'currentColor' : 'none'} />
-          </div>
+          <Bookmark size={26} fill={isSaved ? 'currentColor' : 'none'} />
         </button>
       </div>
 
@@ -313,39 +333,25 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
           text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
 
-        .icon-circle {
-          width: 46px;
-          height: 46px;
-          border-radius: 50%;
-          background: rgba(9, 9, 11, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        .sidebar-btn svg {
+          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9));
           transition: transform 0.2s;
         }
 
-        .sidebar-btn:active .icon-circle {
-          transform: scale(0.9);
+        .sidebar-btn:active svg {
+          transform: scale(0.85);
         }
 
-        .sidebar-btn.liked .icon-circle {
-          color: #f43f5e;
-          background: rgba(244, 63, 94, 0.15);
-          border-color: rgba(244, 63, 94, 0.3);
+        .sidebar-btn.liked svg {
+          color: var(--accent-violet);
         }
 
-        .sidebar-btn.disliked .icon-circle {
-          color: #3b82f6;
-          background: rgba(59, 130, 246, 0.15);
-          border-color: rgba(59, 130, 246, 0.3);
+        .sidebar-btn.disliked svg {
+          color: var(--accent-indigo);
         }
 
-        .sidebar-btn.saved .icon-circle {
+        .sidebar-btn.saved svg {
           color: #eab308;
-          background: rgba(234, 179, 8, 0.15);
-          border-color: rgba(234, 179, 8, 0.3);
         }
 
         /* Bottom metadata overlay */
@@ -386,6 +392,11 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
           line-height: 1.4;
         }
       `}</style>
+      <AuthDrawer 
+        isOpen={isAuthDrawerOpen} 
+        onClose={() => setIsAuthDrawerOpen(false)} 
+        actionText={drawerAction}
+      />
     </div>
   );
 })

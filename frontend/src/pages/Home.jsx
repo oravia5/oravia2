@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Search, Bell } from 'lucide-react';
 import client from '../api/client';
 import PostCard from '../components/PostCard/PostCard';
 import ReelCard from '../components/ReelCard/ReelCard';
 import { useNotifications } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const [feedItems, setFeedItems] = useState([]);
@@ -12,13 +13,86 @@ export default function Home() {
   const [showMessagesModal, setShowMessagesModal] = useState(false);
   const { unreadCount } = useNotifications();
   
+  const [activeTab, setActiveTab] = useState('for-you');
+  const [locationNotSet, setLocationNotSet] = useState(false);
+  const [emptyFollowing, setEmptyFollowing] = useState(false);
+  const [noPostsForLocation, setNoPostsForLocation] = useState(false);
+  const [userLocation, setUserLocation] = useState('');
+
+  const { isAuthenticated } = useAuth();
+  const [guestCityQuery, setGuestCityQuery] = useState('');
+  const [tempCityInput, setTempCityInput] = useState('');
+  const displayFeed = isAuthenticated ? feedItems : feedItems.slice(0, 5);
+
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  const loaderRef = useRef(null);
   const navigate = useNavigate();
 
-  const fetchFeed = async () => {
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`[PWA] User installation choice: ${outcome}`);
+    setDeferredPrompt(null);
+    setShowInstallBanner(false);
+  };
+
+  const fetchFeed = async (tabName = activeTab, targetCity = guestCityQuery) => {
+    setLoading(true);
+    setEmptyFollowing(false);
+    setLocationNotSet(false);
+    setNoPostsForLocation(false);
+    setUserLocation('');
+    setNextCursor(null);
+    setHasMore(true);
+
     try {
-      const res = await client.get('/posts/feed');
+      let endpoint = '/posts/feed?limit=10';
+      if (tabName === 'following') {
+        endpoint = '/posts/following';
+      } else if (tabName === 'near-you') {
+        endpoint = '/posts/near-you?limit=10';
+        if (targetCity) {
+          endpoint += `&city=${encodeURIComponent(targetCity)}`;
+        }
+      }
+
+      const res = await client.get(endpoint);
       if (res.data.success) {
-        setFeedItems(res.data.data);
+        setFeedItems(res.data.data || []);
+        setNextCursor(res.data.nextCursor || null);
+        setHasMore(!!res.data.nextCursor);
+
+        if (tabName === 'following') {
+          setEmptyFollowing(!!res.data.emptyFollowing);
+        } else if (tabName === 'near-you') {
+          // If guest and they queried, don't show locationNotSet card
+          if (!isAuthenticated && targetCity) {
+            setLocationNotSet(false);
+          } else {
+            setLocationNotSet(!!res.data.locationNotSet);
+          }
+          setNoPostsForLocation(!!res.data.noPostsForLocation);
+          setUserLocation(targetCity || res.data.userLocation || '');
+        }
       }
     } catch (err) {
       console.error('Error fetching feed:', err);
@@ -27,9 +101,50 @@ export default function Home() {
     }
   };
 
+  const fetchMorePosts = async () => {
+    if (loadingMore || !hasMore || !nextCursor || !isAuthenticated) return;
+    setLoadingMore(true);
+    try {
+      let endpoint = `/posts/feed?limit=10&cursor=${encodeURIComponent(nextCursor)}`;
+      if (activeTab === 'near-you') {
+        endpoint = `/posts/near-you?limit=10&cursor=${encodeURIComponent(nextCursor)}`;
+        if (guestCityQuery) {
+          endpoint += `&city=${encodeURIComponent(guestCityQuery)}`;
+        }
+      }
+
+      const res = await client.get(endpoint);
+      if (res.data.success) {
+        setFeedItems((prev) => [...prev, ...(res.data.data || [])]);
+        setNextCursor(res.data.nextCursor || null);
+        setHasMore(!!res.data.nextCursor);
+      }
+    } catch (err) {
+      console.error('Error fetching more posts:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
-    fetchFeed();
-  }, []);
+    if (!loaderRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loadingMore && isAuthenticated) {
+        fetchMorePosts();
+      }
+    }, { threshold: 0.5 });
+
+    observer.observe(loaderRef.current);
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [hasMore, nextCursor, loadingMore, isAuthenticated, activeTab, guestCityQuery]);
+
+  useEffect(() => {
+    fetchFeed(activeTab);
+  }, [activeTab]);
 
   const handleDeletePost = (deletedId) => {
     setFeedItems(feedItems.filter(item => item._id !== deletedId));
@@ -58,12 +173,103 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Sticky Tabs Bar */}
+      <div className="timeline-tabs-container">
+        <button 
+          className={`tab-btn ${activeTab === 'for-you' ? 'active' : ''}`}
+          onClick={() => setActiveTab('for-you')}
+        >
+          <span>For You</span>
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'following' ? 'active' : ''}`}
+          onClick={() => setActiveTab('following')}
+        >
+          <span>Following</span>
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'near-you' ? 'active' : ''}`}
+          onClick={() => setActiveTab('near-you')}
+        >
+          <span>Near You</span>
+        </button>
+      </div>
+
       {/* Main Content Area */}
       <main className="feed-body">
         {loading ? (
           <div className="feed-loader-container">
             <div className="spinner"></div>
             <p>Gathering your feed...</p>
+          </div>
+        ) : activeTab === 'following' && emptyFollowing ? (
+          <div className="empty-feed-container">
+            <div className="empty-emoji">👥</div>
+            <h3>Not following anyone yet</h3>
+            <p>Follow creators to see their posts and reels in your Following feed!</p>
+            <button className="btn-primary" style={{ marginTop: '16px', padding: '10px 24px', borderRadius: '20px', fontSize: '14px', fontWeight: '600' }} onClick={() => navigate('/search')}>
+              Find Creators
+            </button>
+          </div>
+        ) : activeTab === 'near-you' && (!isAuthenticated || locationNotSet) && !guestCityQuery ? (
+          <div className="empty-feed-container">
+            <div className="empty-emoji">📍</div>
+            <h3>Search posts near any city</h3>
+            <p>Explore local creators, snips, and products shared in any city.</p>
+            <div style={{ marginTop: '20px', display: 'flex', gap: '8px', width: '100%', maxWidth: '320px', marginLeft: 'auto', marginRight: 'auto' }}>
+              <input 
+                type="text" 
+                placeholder="Enter city (e.g., Kolkata)" 
+                value={tempCityInput} 
+                onChange={(e) => setTempCityInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: '#121214',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none'
+                }}
+              />
+              <button 
+                className="btn-primary" 
+                style={{ padding: '0 16px', borderRadius: '12px', fontSize: '13px' }}
+                onClick={() => {
+                  if (tempCityInput.trim()) {
+                    setGuestCityQuery(tempCityInput.trim());
+                    fetchFeed('near-you', tempCityInput.trim());
+                  }
+                }}
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        ) : activeTab === 'near-you' && noPostsForLocation ? (
+          <div className="empty-feed-container">
+            <div className="empty-emoji">🌆</div>
+            <h3>No posts near {guestCityQuery || userLocation} yet</h3>
+            <p>Be the first to share a photo, video or reel in this location!</p>
+            {!isAuthenticated ? (
+              <button className="btn-primary" style={{ marginTop: '16px', padding: '10px 24px', borderRadius: '20px', fontSize: '14px', fontWeight: '600' }} onClick={() => { setGuestCityQuery(''); setTempCityInput(''); fetchFeed('near-you', ''); }}>
+                Search Another City
+              </button>
+            ) : (
+              <button className="btn-primary" style={{ marginTop: '16px', padding: '10px 24px', borderRadius: '20px', fontSize: '14px', fontWeight: '600' }} onClick={() => navigate('/create-post')}>
+                Create Post
+              </button>
+            )}
+          </div>
+        ) : activeTab === 'near-you' && locationNotSet ? (
+          <div className="empty-feed-container">
+            <div className="empty-emoji">📍</div>
+            <h3>Location Not Set</h3>
+            <p>Please add your location in your profile to find posts and creators near you.</p>
+            <button className="btn-primary" style={{ marginTop: '16px', padding: '10px 24px', borderRadius: '20px', fontSize: '14px', fontWeight: '600' }} onClick={() => navigate('/edit-profile')}>
+              Add Location
+            </button>
           </div>
         ) : feedItems.length === 0 ? (
           <div className="empty-feed-container">
@@ -73,7 +279,23 @@ export default function Home() {
           </div>
         ) : (
           <div className="feed-list">
-            {feedItems.map((item) => {
+            {showInstallBanner && (
+              <div className="pwa-install-banner">
+                <div className="pwa-install-content">
+                  <img src="/logo192.png" alt="Oravia logo" className="pwa-logo-img" />
+                  <div className="pwa-text">
+                    <h4>Install Oravia App</h4>
+                    <p>Add to your home screen for quick access and fullscreen mobile experience!</p>
+                  </div>
+                </div>
+                <div className="pwa-actions">
+                  <button className="btn-install" onClick={handleInstallClick}>Install</button>
+                  <button className="btn-dismiss" onClick={() => setShowInstallBanner(false)}>Not Now</button>
+                </div>
+              </div>
+            )}
+
+            {displayFeed.map((item) => {
               if (item.type === 'reel') {
                 return <ReelCard key={item._id} reel={item} />;
               }
@@ -85,6 +307,26 @@ export default function Home() {
                 />
               );
             })}
+            
+            {/* Guest Scroll Limit Lock Paywall */}
+            {!isAuthenticated && feedItems.length > 5 && (
+              <div className="guest-feed-lock-card">
+                <div className="lock-graphic">🔒</div>
+                <h3>Create a free profile to see more posts</h3>
+                <p>Unlock the full timeline! Join the Oravia community to keep scrolling, follow creators, and discover local content.</p>
+                <div className="lock-cta-actions">
+                  <button className="btn-primary lock-btn" onClick={() => navigate('/login')}>Log In</button>
+                  <button className="lock-secondary-btn" onClick={() => navigate('/register')}>Sign Up</button>
+                </div>
+              </div>
+            )}
+
+            {/* Infinite Scroll Loader marker */}
+            {isAuthenticated && hasMore && (
+              <div ref={loaderRef} className="feed-loading-more-trigger">
+                <div className="spinner" style={{ width: '24px', height: '24px', margin: '20px auto' }}></div>
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -115,6 +357,158 @@ export default function Home() {
           width: 100%;
           min-height: 100vh;
           background-color: #000000;
+        }
+
+        .pwa-install-banner {
+          margin: 16px 16px 8px 16px;
+          padding: 20px;
+          background: linear-gradient(135deg, rgba(20, 20, 25, 0.9) 0%, rgba(10, 10, 12, 0.95) 100%);
+          border: 1px solid rgba(139, 92, 246, 0.25);
+          border-radius: 20px;
+          backdrop-filter: blur(20px);
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .pwa-install-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .pwa-logo-img {
+          width: 48px;
+          height: 48px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .pwa-text h4 {
+          font-family: 'Outfit', sans-serif;
+          font-size: 15px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0 0 4px 0;
+          letter-spacing: -0.01em;
+        }
+
+        .pwa-text p {
+          font-size: 12px;
+          color: #a1a1aa;
+          margin: 0;
+          line-height: 1.45;
+        }
+
+        .pwa-actions {
+          display: flex;
+          gap: 10px;
+        }
+
+        .btn-install {
+          flex: 1;
+          padding: 11px 0;
+          border-radius: 12px;
+          font-family: 'Outfit', sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          border: none;
+          background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-indigo) 100%);
+          color: #ffffff;
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-install:active {
+          transform: scale(0.98);
+        }
+
+        .btn-dismiss {
+          padding: 11px 20px;
+          border-radius: 12px;
+          font-family: 'Outfit', sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #ffffff;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .btn-dismiss:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .guest-feed-lock-card {
+          margin: 24px 16px;
+          background: rgba(20, 20, 25, 0.75);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 20px;
+          padding: 32px 20px;
+          text-align: center;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .lock-graphic {
+          font-size: 36px;
+          margin-bottom: 16px;
+        }
+
+        .guest-feed-lock-card h3 {
+          font-family: 'Outfit', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0 0 8px 0;
+        }
+
+        .guest-feed-lock-card p {
+          font-size: 13px;
+          color: #a1a1aa;
+          line-height: 1.5;
+          margin: 0 0 24px 0;
+        }
+
+        .lock-cta-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .lock-btn {
+          width: 100%;
+          padding: 12px 0;
+          border-radius: 10px;
+          font-family: 'Outfit', sans-serif;
+          font-weight: 600;
+          font-size: 13px;
+          border: none;
+          background: var(--accent-indigo);
+          color: #000;
+          cursor: pointer;
+        }
+
+        .lock-secondary-btn {
+          width: 100%;
+          padding: 12px 0;
+          border-radius: 10px;
+          font-family: 'Outfit', sans-serif;
+          font-weight: 600;
+          font-size: 13px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #ffffff;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .lock-secondary-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
         }
 
         .brand-logo-container {
@@ -330,6 +724,64 @@ export default function Home() {
           padding: 0 2px;
           border: 1px solid #000;
           line-height: 1;
+        }
+
+        .timeline-tabs-container {
+          position: sticky;
+          top: 60px;
+          z-index: 99;
+          background: rgba(0, 0, 0, 0.9);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          height: 48px;
+          width: 100%;
+        }
+
+        .tab-btn {
+          background: none;
+          border: none;
+          color: var(--text-secondary);
+          font-family: 'Outfit', sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          padding: 0 16px;
+          transition: color 0.2s, transform 0.1s;
+        }
+
+        .tab-btn:hover {
+          color: var(--text-primary);
+        }
+
+        .tab-btn:active {
+          transform: scale(0.95);
+        }
+
+        .tab-btn.active {
+          color: var(--text-primary);
+          font-weight: 700;
+        }
+
+        .tab-btn.active::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 15%;
+          right: 15%;
+          height: 3px;
+          background: var(--accent-indigo);
+          border-top-left-radius: 3px;
+          border-top-right-radius: 3px;
+          box-shadow: 0 0 10px rgba(255, 143, 0, 0.5);
         }
       `}</style>
     </div>

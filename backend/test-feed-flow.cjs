@@ -26,28 +26,32 @@ function makeReq(path, method, body, token) {
 
 async function run() {
   const login = await makeReq('/auth/login', 'POST', {
-    emailOrUsername: 'aavnik',
-    password: 'TestPass123'
+    emailOrUsername: 'wisp_coder',
+    password: 'password123'
   });
   console.log('Login status:', login.status);
   if (!login.body.success) {
     console.log('Login failed:', login.body.message);
     return;
   }
-  const token = login.body.token;
-  console.log('Token obtained');
+  const token = login.body.data.token;
+  console.log('Login body:', login.body);
+  console.log('Token obtained:', token);
 
+  console.log('\n--- TESTING [FOR YOU] FEED ---');
   const feed = await makeReq('/posts/feed', 'GET', null, token);
   console.log('Feed status:', feed.status);
-  console.log('Feed success:', feed.body.success);
-  console.log('Feed items:', feed.body.data?.length);
-  if (feed.body.data?.length > 0) {
-    feed.body.data.forEach((item, i) => {
-      console.log('[' + i + '] type=' + item.type + ' caption=' + item.caption + ' author=' + item.author?.username + ' commentCount=' + item.commentCount + ' likes=' + item.likes?.length);
-    });
-  } else {
-    console.log('Feed is empty or error:', feed.body.message);
-  }
+  console.log('Feed body:', feed.body);
+
+  console.log('\n--- TESTING [FOLLOWING] FEED ---');
+  const followingFeed = await makeReq('/posts/following', 'GET', null, token);
+  console.log('Following status:', followingFeed.status);
+  console.log('Following body:', followingFeed.body);
+
+  console.log('\n--- TESTING [NEAR YOU] FEED ---');
+  const nearYouFeed = await makeReq('/posts/near-you', 'GET', null, token);
+  console.log('Near You status:', nearYouFeed.status);
+  console.log('Near You body:', nearYouFeed.body);
 
   // Test like
   if (feed.body.data?.length > 0) {

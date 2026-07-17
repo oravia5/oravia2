@@ -10,6 +10,9 @@ import { upsertLocation } from './locations.controller.js';
  */
 export const getReels = async (req, res) => {
   try {
+    const limit = parseInt(req.query.limit) || 5;
+    const { cursor } = req.query;
+
     let query = {
       type: 'reel',
       isArchived: { $ne: true },
@@ -27,14 +30,26 @@ export const getReels = async (req, res) => {
       }
     }
 
-    // Fetch all posts of type 'reel'
+    if (cursor) {
+      query.createdAt = { $lt: new Date(cursor) };
+    }
+
     const reels = await Post.find(query)
       .sort({ createdAt: -1 })
+      .limit(limit + 1)
       .populate('author', '_id username displayName avatarUrl');
+
+    const hasNextPage = reels.length > limit;
+    if (hasNextPage) {
+      reels.pop();
+    }
+
+    const nextCursor = hasNextPage && reels.length > 0 ? reels[reels.length - 1].createdAt : null;
 
     res.json({
       success: true,
       data: reels,
+      nextCursor,
     });
   } catch (error) {
     console.error(error);
@@ -53,6 +68,7 @@ export const getReels = async (req, res) => {
 export const createReel = async (req, res) => {
   try {
     const { caption, location, album, status } = req.body;
+    const isReal = req.body.isReal === 'true';
 
     const reelFile = (req.files && req.files['media'] ? req.files['media'][0] : null) || req.file;
 
@@ -70,6 +86,9 @@ export const createReel = async (req, res) => {
     const regex = /#(\w+)/g;
     const matches = [...(caption || '').matchAll(regex)];
     const parsedTags = matches.map((m) => m[1].toLowerCase());
+    if (isReal && !parsedTags.includes('real')) {
+      parsedTags.push('real');
+    }
 
     // Parse shoppable products list
     let products = [];
@@ -122,6 +141,7 @@ export const createReel = async (req, res) => {
       album: album ? album.trim() : '',
       tags: parsedTags,
       status: status || 'published',
+      isReal,
     });
 
     const populatedReel = await Post.findById(reel._id).populate(

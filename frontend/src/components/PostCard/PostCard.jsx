@@ -1,9 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
+import AuthDrawer from '../AuthDrawer/AuthDrawer';
 
 const POPULAR_LOCATIONS = [
   'Mumbai, Maharashtra, India',
@@ -73,14 +74,18 @@ const POPULAR_LOCATIONS = [
 ];
 
 export default function PostCard({ post, onDeleteSuccess }) {
-  const { user, updateUserData } = useAuth();
+  const { user, updateUserData, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const carouselRef = useRef(null);
 
+  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
+  const [drawerAction, setDrawerAction] = useState('interact with posts');
+
   const handleProductWishlistToggle = async (productId, e) => {
     if (e) e.stopPropagation();
-    if (!user) {
-      navigate('/login');
+    if (!isAuthenticated) {
+      setDrawerAction('add products to wishlist');
+      setIsAuthDrawerOpen(true);
       return;
     }
     try {
@@ -265,6 +270,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   const handleLike = async () => {
+    if (!isAuthenticated) {
+      setDrawerAction('like posts');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const res = await client.post(`/posts/${post._id}/like`);
       if (res.data.success) {
@@ -277,6 +287,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   const handleDislike = async () => {
+    if (!isAuthenticated) {
+      setDrawerAction('dislike posts');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const res = await client.post(`/posts/${post._id}/dislike`);
       if (res.data.success) {
@@ -289,6 +304,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   const handleSave = async () => {
+    if (!isAuthenticated) {
+      setDrawerAction('save posts');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
     try {
       const endpoint = isSaved ? `/posts/${post._id}/unsave` : `/posts/${post._id}/save`;
       const res = await client.post(endpoint);
@@ -372,27 +392,29 @@ export default function PostCard({ post, onDeleteSuccess }) {
     <div className="post-card animate-fade">
       {/* Header */}
       <div className="post-header">
-        <Link to={`/profile/${post.author?.username}`} className="author-link">
-          <img 
-            src={getFullMediaUrl(post.author?.avatarUrl) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'} 
-            alt={post.author?.username} 
-            className="author-avatar" 
-          />
+        <div className="author-header-left">
+          <Link to={`/profile/${post.author?.username}`} className="author-avatar-link">
+            <img 
+              src={getFullMediaUrl(post.author?.avatarUrl) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'} 
+              alt={post.author?.username} 
+              className="author-avatar" 
+            />
+          </Link>
           <div className="author-details">
-            <span className="author-name">{post.author?.displayName || post.author?.username}</span>
+            <Link to={`/profile/${post.author?.username}`} className="author-name-link">
+              <span className="author-name">{post.author?.displayName || post.author?.username}</span>
+            </Link>
             <span className="author-username">@{post.author?.username}</span>
+            {currentLocation && (
+              <Link to={`/location/${encodeURIComponent(currentLocation)}`} className="post-location-link">
+                <MapPin size={10} style={{ marginRight: '3px' }} />
+                <span>{currentLocation}</span>
+              </Link>
+            )}
           </div>
-        </Link>
+        </div>
 
         <div className="post-meta-right">
-          {currentLocation && (
-            <Link to={`/location/${encodeURIComponent(currentLocation)}`} className="location-link-wrapper">
-              <div className="location-tag">
-                <MapPin size={12} />
-                <span>{currentLocation}</span>
-              </div>
-            </Link>
-          )}
           {isAuthor && (
             <div className="post-options-menu-wrapper" style={{ position: 'relative' }}>
               <button 
@@ -445,6 +467,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
       {/* Media Block */}
       <div className="post-media-container" style={mediaAspect ? { aspectRatio: mediaAspect } : undefined}>
+        {post.isReal && (
+          <div className="post-real-badge-overlay">
+            <Camera size={12} style={{ marginRight: '4px' }} /> Real
+          </div>
+        )}
         {hasCarousel ? (
           <div
             className="carousel-wrapper"
@@ -761,7 +788,15 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
           <button 
             className="action-btn" 
-            onClick={(e) => { e.stopPropagation(); setShowComments(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isAuthenticated) {
+                setDrawerAction('comment on posts');
+                setIsAuthDrawerOpen(true);
+              } else {
+                setShowComments(true);
+              }
+            }}
             aria-label="Comment"
           >
             <MessageCircle size={22} />
@@ -835,12 +870,39 @@ export default function PostCard({ post, onDeleteSuccess }) {
           padding: 14px 16px;
         }
 
-        .author-link {
+        .author-header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .author-avatar-link {
           display: flex;
           align-items: center;
           text-decoration: none;
+        }
+
+        .author-name-link {
+          text-decoration: none;
           color: inherit;
-          gap: 12px;
+        }
+
+        .author-name-link:hover {
+          text-decoration: underline;
+        }
+
+        .post-location-link {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          font-size: 10px;
+          color: #ffffff;
+          text-decoration: none;
+          margin-top: 2px;
+        }
+
+        .post-location-link:hover {
+          color: rgba(255, 255, 255, 0.8);
         }
 
         .author-avatar {
@@ -863,7 +925,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
         .author-username {
           font-size: 11px;
-          color: var(--text-secondary);
+          color: #ffffff;
         }
 
         .post-meta-right {
@@ -1140,9 +1202,34 @@ export default function PostCard({ post, onDeleteSuccess }) {
           z-index: 5;
           backdrop-filter: blur(4px);
         }
+
+        .post-real-badge-overlay {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          z-index: 10;
+          display: inline-flex;
+          align-items: center;
+          background: linear-gradient(135deg, #FF8F00 0%, #d84315 100%);
+          color: #fff;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 4px 8px;
+          border-radius: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          box-shadow: 0 4px 12px rgba(255, 143, 0, 0.4);
+          line-height: 1;
+        }
       `}</style>
 
       {/* Inline edit post modal removed, routing to standalone CreatePost page instead */}
+      
+      <AuthDrawer 
+        isOpen={isAuthDrawerOpen} 
+        onClose={() => setIsAuthDrawerOpen(false)} 
+        actionText={drawerAction}
+      />
     </div>
   );
 }

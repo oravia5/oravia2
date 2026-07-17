@@ -426,7 +426,7 @@ const msgPageStyles = `
   }
   .msg-bubble p { margin: 0; }
   .msg-bubble.sent {
-    background: var(--accent-indigo);
+    background: var(--accent-gradient);
     color: #fff;
     border-bottom-right-radius: 4px;
   }
@@ -650,7 +650,7 @@ const msgPageStyles = `
     outline: none;
   }
   .chat-input-bar input[type="text"]:focus {
-    border-color: rgba(99,102,241,0.4);
+    border-color: var(--accent-indigo);
   }
   .send-btn {
     background: #1e1b18;
@@ -667,10 +667,11 @@ const msgPageStyles = `
     flex-shrink: 0;
   }
   .send-btn.active {
-    background: var(--accent-indigo, #6366f1);
-    color: #fff;
+    background: var(--accent-indigo);
+    color: #000;
     cursor: pointer;
   }
+
   .spinner-tiny {
     width: 16px;
     height: 16px;

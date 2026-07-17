@@ -3,8 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import client from '../api/client';
 import ReelPlayer from '../components/ReelPlayer/ReelPlayer';
+import { useAuth } from '../context/AuthContext';
 
 export default function Reels() {
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -12,14 +14,22 @@ export default function Reels() {
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const displayReels = isAuthenticated ? reels : reels.slice(0, 5);
+
   const containerRef = useRef(null);
   const scrollRaf = useRef(null);
 
   const fetchReels = async () => {
     try {
-      const res = await client.get('/reels');
+      const res = await client.get('/reels?limit=5');
       if (res.data.success) {
         setReels(res.data.data);
+        setNextCursor(res.data.nextCursor || null);
+        setHasMore(!!res.data.nextCursor);
         
         // Handle scroll alignment if directed from specific card
         const targetId = location.state?.activeId;
@@ -47,6 +57,23 @@ export default function Reels() {
     }
   };
 
+  const fetchMoreReels = async () => {
+    if (loadingMore || !hasMore || !nextCursor || !isAuthenticated) return;
+    setLoadingMore(true);
+    try {
+      const res = await client.get(`/reels?limit=5&cursor=${encodeURIComponent(nextCursor)}`);
+      if (res.data.success) {
+        setReels((prev) => [...prev, ...(res.data.data || [])]);
+        setNextCursor(res.data.nextCursor || null);
+        setHasMore(!!res.data.nextCursor);
+      }
+    } catch (err) {
+      console.error('Error fetching more reels:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
     fetchReels();
   }, [location.state]);
@@ -60,8 +87,14 @@ export default function Reels() {
       const scrollOffset = container.scrollTop;
       
       const index = Math.round(scrollOffset / height);
-      if (index !== activeIndex && index >= 0 && index < reels.length) {
+      const totalCount = isAuthenticated ? reels.length : Math.min(reels.length, 6);
+      if (index !== activeIndex && index >= 0 && index < totalCount) {
         setActiveIndex(index);
+        
+        // Pre-fetch next page when approaching the second-to-last item of current feed
+        if (isAuthenticated && hasMore && !loadingMore && index >= reels.length - 2) {
+          fetchMoreReels();
+        }
       }
     });
   };
@@ -91,7 +124,7 @@ export default function Reels() {
           className="reels-container" 
           onScroll={handleScroll}
         >
-          {reels.map((reel, idx) => (
+          {displayReels.map((reel, idx) => (
             <div key={reel._id} className="reel-item">
               <ReelPlayer 
                 reel={reel} 
@@ -99,6 +132,17 @@ export default function Reels() {
               />
             </div>
           ))}
+          {!isAuthenticated && reels.length > 5 && (
+            <div className="reel-item reels-lock-item">
+              <div className="reels-lock-card">
+                <div className="lock-icon-circle">🎬</div>
+                <h3>Create a profile to watch more Snips</h3>
+                <p>Watch unlimited videos, post your own Snips, and connect with creators on Oravia!</p>
+                <button className="btn-primary" onClick={() => navigate('/login')} style={{ width: '100%', marginBottom: '12px', padding: '14px 0', borderRadius: '12px' }}>Log In</button>
+                <button className="secondary-btn" onClick={() => navigate('/register')}>Sign Up</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -184,6 +228,76 @@ export default function Reels() {
 
         .create-reel-fab:active {
           transform: scale(0.95);
+        }
+
+        .reels-lock-item {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #000000;
+          box-sizing: border-box;
+          padding: 24px;
+        }
+
+        .reels-lock-card {
+          width: 100%;
+          max-width: 400px;
+          background: rgba(20, 20, 25, 0.75);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          padding: 40px 24px;
+          text-align: center;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+          box-sizing: border-box;
+        }
+
+        .lock-icon-circle {
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          background: rgba(99, 102, 241, 0.1);
+          border: 1.5px solid rgba(99, 102, 241, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 32px;
+          margin: 0 auto 24px auto;
+        }
+
+        .reels-lock-card h3 {
+          font-family: 'Outfit', sans-serif;
+          font-size: 20px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0 0 12px 0;
+          line-height: 1.3;
+        }
+
+        .reels-lock-card p {
+          font-size: 13px;
+          color: #a1a1aa;
+          line-height: 1.6;
+          margin: 0 0 32px 0;
+        }
+
+        .reels-lock-card .secondary-btn {
+          width: 100%;
+          padding: 14px 0;
+          border-radius: 12px;
+          font-family: 'Outfit', sans-serif;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #ffffff;
+          transition: all 0.2s;
+          box-sizing: border-box;
+        }
+
+        .reels-lock-card .secondary-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
         }
       `}</style>
     </div>
