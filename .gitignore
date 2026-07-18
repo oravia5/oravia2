@@ -19,3 +19,6 @@ stderr.txt
 # Uploads
 backend/uploads/
 backend/uploads_test/
+
+# Keys
+*.pem

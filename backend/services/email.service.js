@@ -1,13 +1,19 @@
 import nodemailer from 'nodemailer';
 
-// Configure SMTP transport using provided Gmail credentials
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'oraviapvtltd5@gmail.com',
-    pass: 'urlt valv fkxw yqeq',
-  },
-});
+// Configure SMTP transport using Gmail credentials from environment variables
+let _transporter = null;
+function getTransporter() {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      service: process.env.SMTP_SERVICE || 'gmail',
+      auth: {
+        user: process.env.SMTP_USER || 'oraviapvtltd5@gmail.com',
+        pass: process.env.SMTP_PASS || 'urlt valv fkxw yqeq',
+      },
+    });
+  }
+  return _transporter;
+}
 
 /**
  * Sends a monochromatic, high-fidelity HTML email containing the OTP code.
@@ -25,7 +31,7 @@ export const sendOTPEmail = async (toEmail, otpCode, purpose) => {
     : 'We received a request to reset your password. Use the OTP code below to complete the reset process.';
   
   const mailOptions = {
-    from: '"Oravia Admin" <oraviapvtltd5@gmail.com>',
+    from: process.env.SMTP_FROM || '"Oravia Admin" <oraviapvtltd5@gmail.com>',
     to: toEmail,
     subject: isRegister ? '[Oravia] Verify Email OTP' : '[Oravia] Reset Password OTP',
     html: `
@@ -108,7 +114,7 @@ export const sendOTPEmail = async (toEmail, otpCode, purpose) => {
   };
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const info = await getTransporter().sendMail(mailOptions);
     console.log(`Email dispatched to ${toEmail}: ${info.messageId}`);
     return true;
   } catch (error) {

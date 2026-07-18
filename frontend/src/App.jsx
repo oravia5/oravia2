@@ -28,6 +28,7 @@ import SavedPosts from './pages/SavedPosts';
 import ArchivedPosts from './pages/ArchivedPosts';
 import Drafts from './pages/Drafts';
 import BlockedAccounts from './pages/BlockedAccounts';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Reusable Components
 import BottomNav from './components/BottomNav/BottomNav';
@@ -51,6 +52,22 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
+// Admin Route Guard
+const AdminRoute = ({ children }) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: '#09090b' }}>
+        <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      </div>
+    );
+  }
+
+  const isAdmin = user && (user.role === 'admin' || user.role === 'superadmin');
+  return isAuthenticated && isAdmin ? children : <Navigate to="/" replace />;
+};
+
 // Layout component to selectively display BottomNav
 const AppLayout = () => {
   const { isAuthenticated } = useAuth();
@@ -62,21 +79,24 @@ const AppLayout = () => {
   }, [location.pathname]);
 
   // Hide BottomNav on login/register/verify/forgot/edit-profile screens
+  const isAdminPath = location.pathname.startsWith('/admin');
   const hideNavPaths = [
     '/login', '/register', '/verify-otp', '/forgot-password', 
     '/edit-profile'
   ];
-  const showNav = !hideNavPaths.includes(location.pathname);
+  const showNav = !hideNavPaths.includes(location.pathname) && !isAdminPath;
 
   return (
     <>
-      {/* Desktop Blocker - visible only on screens > 480px */}
-      <div className="desktop-blocker">
-        <div className="desktop-blocker-icon">📱</div>
-        <h2>Oravia is Mobile Only</h2>
-        <p>Please open this app on your mobile device for the best experience. Oravia is designed exclusively for mobile screens.</p>
-        <div className="desktop-blocker-qr">Open on your phone →</div>
-      </div>
+      {/* Desktop Blocker - visible only on screens > 480px (bypassed for admin dashboard) */}
+      {!isAdminPath && (
+        <div className="desktop-blocker">
+          <div className="desktop-blocker-icon">📱</div>
+          <h2>Oravia is Mobile Only</h2>
+          <p>Please open this app on your mobile device for the best experience. Oravia is designed exclusively for mobile screens.</p>
+          <div className="desktop-blocker-qr">Open on your phone →</div>
+        </div>
+      )}
 
       <div className="app-container">
       <UploadToast />
@@ -111,6 +131,9 @@ const AppLayout = () => {
         <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
         <Route path="/tag/:tag" element={<ProtectedRoute><HashtagFeed /></ProtectedRoute>} />
         <Route path="/location/:location" element={<ProtectedRoute><LocationFeed /></ProtectedRoute>} />
+
+        {/* Admin Dashboard */}
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -15,6 +15,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import locationRoutes from './routes/locations.routes.js';
 import productsRoutes from './routes/products.routes.js';
 import chatRoutes from './routes/chat.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -60,6 +61,9 @@ app.use('/api/products', productsRoutes);
 
 // Chat routes
 app.use('/api/chat', chatRoutes);
+
+// Admin routes
+app.use('/api/admin', adminRoutes);
 
 // Base route for status verification
 app.get('/', (req, res) => {

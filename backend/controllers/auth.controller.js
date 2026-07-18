@@ -160,6 +160,8 @@ export const verifyRegisterOTP = async (req, res) => {
         displayName: user.displayName,
         bio: user.bio,
         avatarUrl: user.avatarUrl,
+        role: user.role || 'user',
+        isBanned: user.isBanned || false,
         token: generateToken(user._id),
       },
     });
@@ -197,6 +199,13 @@ export const loginUser = async (req, res) => {
     });
 
     if (user && (await user.matchPassword(password))) {
+      if (user.isBanned) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been banned.',
+        });
+      }
+
       // Block unverified login attempts and signal frontend to show OTP verification
       if (!user.isVerified) {
         // Send a new registration OTP code just in case
@@ -232,6 +241,8 @@ export const loginUser = async (req, res) => {
           displayName: user.displayName,
           bio: user.bio,
           avatarUrl: user.avatarUrl,
+          role: user.role || 'user',
+          isBanned: user.isBanned || false,
           token: generateToken(user._id),
         },
       });
