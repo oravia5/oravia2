@@ -2,6 +2,9 @@ import axios from 'axios';
 
 // Dynamically determine the backend URL
 const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
   const hostname = window.location.hostname;
   if (hostname === 'localhost' || hostname === '127.0.0.1' || /^[0-9.]+$/.test(hostname)) {
     return `http://${hostname}:5000/api`;
