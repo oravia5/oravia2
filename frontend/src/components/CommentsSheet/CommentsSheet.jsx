@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Send, Trash2, Heart, ThumbsDown, Image, Smile, CornerDownRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
+import { getFullMediaUrl } from '../../utils/mediaUrl';
 
 const EMOJI_LIST = ['😀','😂','🥰','😍','🤩','😎','🥺','😢','😡','🔥','❤️','💯','👏','🙌','💪','🎉','✨','💀','👀','🤔','😈','💖','🥳','😭','🤗','👍','👎','😊','🫶','💕'];
 
@@ -28,11 +29,7 @@ export default function CommentsSheet({ postId, onClose, onCommentCountChange })
   const inputRef = useRef(null);
   const sheetRef = useRef(null);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) return `http://127.0.0.1:5000${url}`;
-    return url;
-  };
+
 
   const fetchComments = useCallback(async () => {
     try {

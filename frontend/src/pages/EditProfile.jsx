@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, AlertCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 const POPULAR_LOCATIONS = [
   'Mumbai, Maharashtra, India',
@@ -129,13 +130,7 @@ export default function EditProfile() {
   const fileInputRef = useRef(null);
   const coverInputRef = useRef(null);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   // Fetch current user data to prefill form
   useEffect(() => {

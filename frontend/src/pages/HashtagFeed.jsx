@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Grid, List, AlertCircle, MessageCircle, Heart } from 'lucide-react';
 import client from '../api/client';
 import PostCard from '../components/PostCard/PostCard';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function HashtagFeed() {
   const { tag } = useParams();
@@ -33,13 +34,7 @@ export default function HashtagFeed() {
     fetchTagPosts();
   }, [tag]);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   return (
     <div className="tag-feed-page animate-fade">

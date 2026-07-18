@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { Link } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -48,13 +49,7 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
 
   const videoRef = useRef(null);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   const isLiked = likes.includes(user?._id);
   const isDisliked = dislikes.includes(user?._id);

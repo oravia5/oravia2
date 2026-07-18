@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Grid, List, AlertCircle, MapPin, Heart, MessageCircle } from 'lucide-react';
 import client from '../api/client';
 import PostCard from '../components/PostCard/PostCard';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function LocationFeed() {
   const { location } = useParams();
@@ -34,13 +35,7 @@ export default function LocationFeed() {
     fetchLocationPosts();
   }, [location]);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   const decodedLocationName = decodeURIComponent(location);
 

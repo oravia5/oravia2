@@ -4,14 +4,9 @@ import { Heart, MessageCircle, UserPlus, Share2, Bell, Loader2, ArrowLeft } from
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
-const getFullMediaUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('/uploads/')) {
-    return `http://127.0.0.1:5000${url}`;
-  }
-  return url;
-};
+
 
 const getNotificationText = (type) => {
   switch (type) {

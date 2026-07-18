@@ -2,17 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FolderHeart, Download, ShoppingBag, Loader2 } from 'lucide-react';
 import client from '../api/client';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function Wishlist() {
   const navigate = useNavigate();
   const [wishlistProducts, setWishlistProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `http://127.0.0.1:5000${url}`;
-  };
+
 
   const fetchWishlist = async () => {
     setLoading(true);

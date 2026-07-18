@@ -7,10 +7,7 @@ import { useAuth } from './AuthContext';
 
 const ChatContext = createContext({ chatReady: false, connected: false });
 
-const API_BASE =
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:5000'
-    : '';
+const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
 
 let globalClients = null;
 

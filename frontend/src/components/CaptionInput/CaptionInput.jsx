@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import client from '../../api/client';
+import { getFullMediaUrl } from '../../utils/mediaUrl';
+
 
 let debounceTimer = null;
 const debounce = (fn, ms) => {
@@ -203,9 +205,7 @@ export default function CaptionInput({ value, onChange, disabled }) {
             >
               <img
                 src={user.avatarUrl
-                  ? user.avatarUrl.startsWith('/uploads/')
-                    ? `http://127.0.0.1:5000${user.avatarUrl}`
-                    : user.avatarUrl
+                  ? getFullMediaUrl(user.avatarUrl)
                   : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}
                 alt=""
                 className="suggest-avatar"

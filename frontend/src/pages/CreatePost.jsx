@@ -4,6 +4,7 @@ import { ArrowLeft, Image, Video, Plus, Trash2, MapPin, Sparkles, Upload, Pencil
 import client from '../api/client';
 import { useUpload } from '../context/UploadContext';
 import CaptionInput from '../components/CaptionInput/CaptionInput';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 const POPULAR_LOCATIONS = [
   'Mumbai, Maharashtra, India',
@@ -140,11 +141,7 @@ export default function CreatePost() {
     }
   };
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('blob:') || url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `http://127.0.0.1:5000${url}`;
-  };
+
 
   const checkIsVideo = (url, idx) => {
     if (url.startsWith('blob:')) {

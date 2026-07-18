@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Camera, Edit3, LogOut, Settings, X, AlertCircle, MapPin, Link2, Calendar, Ban, Briefcase, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
+import { getFullMediaUrl } from '../../utils/mediaUrl';
 
 export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, refetchProfile }) {
   const { logout, updateUserData } = useAuth();
@@ -13,13 +14,7 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
   const [followerCount, setFollowerCount] = useState(profile.followerCount || 0);
   const coverInputRef = useRef(null);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   // Sync local state when profile data changes (e.g., after refetch)
   useEffect(() => {

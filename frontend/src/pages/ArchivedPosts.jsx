@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Archive, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function ArchivedPosts() {
   const navigate = useNavigate();
@@ -10,11 +11,7 @@ export default function ArchivedPosts() {
   const [archivedPosts, setArchivedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `http://127.0.0.1:5000${url}`;
-  };
+
 
   const fetchArchive = async () => {
     if (!user?._id) return;

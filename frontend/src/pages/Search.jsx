@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Users, FileText, Hash, MapPin, Grid, List } from 'lucide-react';
 import client from '../api/client';
 import PostCard from '../components/PostCard/PostCard';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function Search() {
   const navigate = useNavigate();
@@ -51,13 +52,7 @@ export default function Search() {
     }
   };
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   return (
     <div className="search-page-container">

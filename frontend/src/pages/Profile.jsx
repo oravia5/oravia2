@@ -4,6 +4,7 @@ import { Grid, Film, Bookmark, AlertCircle, Folder, ArrowLeft, Archive, FileText
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
 import ProfileHeader from '../components/ProfileHeader/ProfileHeader';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -22,13 +23,7 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [isBlockedByThem, setIsBlockedByThem] = useState(false);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   const fetchProfileData = async ({ showLoader = true } = {}) => {
     if (showLoader) setLoading(true);

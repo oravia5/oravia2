@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function AdminDashboard() {
   const { logout } = useAuth();
@@ -990,13 +991,13 @@ export default function AdminDashboard() {
                     <div className="post-media-container">
                       {postObj.type === 'photo' ? (
                         <img
-                          src={postObj.mediaUrl}
+                          src={getFullMediaUrl(postObj.mediaUrl)}
                           alt="Post Media"
                           className="post-media-preview"
                         />
                       ) : (
                         <video
-                          src={postObj.mediaUrl}
+                          src={getFullMediaUrl(postObj.mediaUrl)}
                           className="post-media-preview"
                           muted
                           preload="metadata"

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -51,13 +52,7 @@ export default function ReelCard({ reel }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
-  const getFullMediaUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/')) {
-      return `http://127.0.0.1:5000${url}`;
-    }
-    return url;
-  };
+
 
   const isLiked = likes.some(id => id.toString() === user?._id?.toString());
   const isDisliked = dislikes.some(id => id.toString() === user?._id?.toString());

@@ -3,14 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Ban } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
+import { getFullMediaUrl } from '../utils/mediaUrl';
 
-const getFullMediaUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('/uploads/')) {
-    return `http://127.0.0.1:5000${url}`;
-  }
-  return url;
-};
+
 
 export default function FollowList() {
   const { username, type } = useParams();
