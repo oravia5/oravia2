@@ -25,7 +25,12 @@ export default function Login() {
 
     const res = await login(emailOrUsername, password);
     if (res.success) {
-      navigate('/');
+      // Redirect admin users to admin dashboard
+      if (res.user && (res.user.role === 'admin' || res.user.role === 'superadmin')) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } else {
       if (res.isUnverified) {
         // Redirect to OTP verification page and pass the email

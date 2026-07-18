@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('oravia_token', token);
         localStorage.setItem('oravia_user', JSON.stringify(userData));
         setUser(userData);
-        return { success: true };
+        return { success: true, user: userData };
       }
     } catch (error) {
       if (error.response?.data?.isUnverified) {

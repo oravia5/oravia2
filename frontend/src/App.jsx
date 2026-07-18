@@ -64,8 +64,12 @@ const AdminRoute = ({ children }) => {
     );
   }
 
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   const isAdmin = user && (user.role === 'admin' || user.role === 'superadmin');
-  return isAuthenticated && isAdmin ? children : <Navigate to="/" replace />;
+  return isAdmin ? children : <Navigate to="/" replace />;
 };
 
 // Layout component to selectively display BottomNav
@@ -88,8 +92,8 @@ const AppLayout = () => {
 
   return (
     <>
-      {/* Desktop Blocker - visible only on screens > 480px (bypassed for admin dashboard) */}
-      {!isAdminPath && (
+      {/* Desktop Blocker - visible only on screens > 480px (bypassed for admin dashboard and auth pages) */}
+      {!isAdminPath && !hideNavPaths.includes(location.pathname) && (
         <div className="desktop-blocker">
           <div className="desktop-blocker-icon">📱</div>
           <h2>Oravia is Mobile Only</h2>
