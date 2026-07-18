@@ -58,7 +58,7 @@ router.get('/post/:id', async (req, res) => {
       if (thumbUrl && !isVideoFile(thumbUrl)) {
         imageUrl = thumbUrl;
       } else {
-        imageUrl = 'https://oravia.co.in/favicon.png';
+        imageUrl = 'https://oravia.co.in/video-placeholder.png';
       }
     }
 
