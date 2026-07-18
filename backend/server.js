@@ -16,6 +16,7 @@ import locationRoutes from './routes/locations.routes.js';
 import productsRoutes from './routes/products.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import ogRoutes from './routes/og.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -64,6 +65,9 @@ app.use('/api/chat', chatRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);
+
+// OG Preview routes
+app.use('/og', ogRoutes);
 
 // Base route for status verification
 app.get('/', (req, res) => {
