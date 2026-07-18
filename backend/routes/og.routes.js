@@ -42,13 +42,23 @@ router.get('/post/:id', async (req, res) => {
     <meta property="og:video:type" content="video/mp4" />
     <meta property="og:video:width" content="720" />
     <meta property="og:video:height" content="1280" />`;
-      // Use thumbnail for the og:image if available
-      if (post.thumbnailUrl) {
-        let thumbUrl = post.thumbnailUrl;
-        if (thumbUrl.startsWith('/uploads/')) {
-          thumbUrl = `https://oravia.co.in${thumbUrl}`;
-        }
+      
+      // Try to resolve a valid image thumbnail
+      let thumbUrl = post.thumbnailUrl || '';
+      if (thumbUrl && thumbUrl.startsWith('/uploads/')) {
+        thumbUrl = `https://oravia.co.in${thumbUrl}`;
+      }
+      
+      // If thumbnail is a video or empty, fall back to favicon/logo
+      const isVideoFile = (url) => {
+        const lower = (url || '').toLowerCase();
+        return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.quicktime') || lower.endsWith('.webm');
+      };
+
+      if (thumbUrl && !isVideoFile(thumbUrl)) {
         imageUrl = thumbUrl;
+      } else {
+        imageUrl = 'https://oravia.co.in/favicon.png';
       }
     }
 
