@@ -3,6 +3,10 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
+import { exec } from 'child_process';
+import util from 'util';
+
+const execPromise = util.promisify(exec);
 
 // Lazy getter — reads process.env AFTER dotenv.config() has run in server.js.
 let _s3Client = null;
@@ -98,6 +102,31 @@ class StorageService {
    */
   getThumbnailUrl(fileOrUrl, type) {
     return this.getUrl(fileOrUrl);
+  }
+
+  async generateVideoThumbnail(videoRelativePath, folder = 'posts') {
+    try {
+      const uploadDir = process.env.UPLOAD_DIR || './uploads';
+      if (!videoRelativePath.startsWith('/uploads/')) return '';
+      const cleanPath = videoRelativePath.slice('/uploads/'.length);
+      const videoFullPath = path.join(process.cwd(), uploadDir, cleanPath);
+      
+      const ext = path.extname(videoFullPath);
+      const thumbFullPath = videoFullPath.replace(ext, '-thumb.jpg');
+      const thumbRelativePath = videoRelativePath.replace(ext, '-thumb.jpg');
+
+      console.log(`Generating thumbnail for video: ${videoFullPath} -> ${thumbFullPath}`);
+      
+      // Extract frame at 1st second (-ss 1)
+      const command = `ffmpeg -y -i "${videoFullPath}" -ss 1 -vframes 1 -q:v 4 "${thumbFullPath}"`;
+      await execPromise(command);
+      
+      console.log('Thumbnail generated successfully!');
+      return thumbRelativePath;
+    } catch (err) {
+      console.error('Failed to generate video thumbnail:', err.message);
+      return '';
+    }
   }
 
   /**

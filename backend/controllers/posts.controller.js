@@ -326,7 +326,13 @@ export const createPost = async (req, res) => {
       const isVideo = file.mimetype.startsWith('video/');
       const fileType = isVideo ? 'video' : 'photo';
       const url = await StorageService.uploadFile(file, 'posts');
-      const thumb = url;
+      let thumb = url;
+      if (isVideo) {
+        const videoThumb = await StorageService.generateVideoThumbnail(url, 'posts');
+        if (videoThumb) {
+          thumb = videoThumb;
+        }
+      }
       mediaItems.push({
         url,
         type: fileType,

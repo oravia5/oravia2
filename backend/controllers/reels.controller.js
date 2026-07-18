@@ -81,7 +81,11 @@ export const createReel = async (req, res) => {
 
     const type = 'reel';
     const mediaUrl = await StorageService.uploadFile(reelFile, 'reels');
-    const thumbnailUrl = mediaUrl;
+    let thumbnailUrl = mediaUrl;
+    const videoThumb = await StorageService.generateVideoThumbnail(mediaUrl, 'reels');
+    if (videoThumb) {
+      thumbnailUrl = videoThumb;
+    }
 
     const regex = /#(\w+)/g;
     const matches = [...(caption || '').matchAll(regex)];
