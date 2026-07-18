@@ -44,6 +44,7 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [reelProgress, setReelProgress] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
 
@@ -173,6 +174,10 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
         muted={isMuted}
         onClick={handleVideoClick}
         playsInline
+        onTimeUpdate={(e) => {
+          const v = e.target;
+          if (v.duration) setReelProgress((v.currentTime / v.duration) * 100);
+        }}
       />
 
       {/* Play/Pause center overlay */}
@@ -190,6 +195,24 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
       >
         {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
       </button>
+
+      {/* Seek / progress bar */}
+      <div
+        className="reel-progress-hitzone"
+        onClick={(e) => {
+          e.stopPropagation();
+          const rect = e.currentTarget.getBoundingClientRect();
+          const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+          if (videoRef.current && videoRef.current.duration) {
+            videoRef.current.currentTime = percent * videoRef.current.duration;
+            setReelProgress(percent * 100);
+          }
+        }}
+      >
+        <div className="reel-progress-track">
+          <div className="reel-progress-fill" style={{ width: `${reelProgress}%` }} />
+        </div>
+      </div>
 
       {/* Actions Sidebar (Likes, Dislikes, Comments, Shares, Bookmark) */}
       <div className="reel-sidebar" onClick={(e) => e.stopPropagation()}>
@@ -300,6 +323,31 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
           color: #fff;
           cursor: pointer;
           z-index: 10;
+        }
+
+        .reel-progress-hitzone {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 28px;
+          z-index: 11;
+          cursor: pointer;
+          display: flex;
+          align-items: flex-end;
+        }
+
+        .reel-progress-track {
+          position: relative;
+          width: 100%;
+          height: 3px;
+          background: rgba(255,255,255,0.25);
+        }
+
+        .reel-progress-fill {
+          height: 100%;
+          background: #ffffff;
+          transition: width 0.25s linear;
         }
 
         /* Sidebar overlays */

@@ -82,7 +82,7 @@ export const createReel = async (req, res) => {
     const type = 'reel';
     const mediaUrl = await StorageService.uploadFile(reelFile, 'reels');
     let thumbnailUrl = mediaUrl;
-    const videoThumb = await StorageService.generateVideoThumbnail(mediaUrl, 'reels');
+    const videoThumb = await StorageService.generateVideoThumbnailFromBuffer(reelFile.buffer, 'reels');
     if (videoThumb) {
       thumbnailUrl = videoThumb;
     }

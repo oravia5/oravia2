@@ -9,11 +9,11 @@ export default function VerifyOTP() {
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(60);
   const [resendStatus, setResendStatus] = useState('');
-  
+
   const { verifyOTP } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Get email from router navigation state (or default placeholder)
   const email = location.state?.email || localStorage.getItem('oravia_pending_email') || '';
 
@@ -44,7 +44,7 @@ export default function VerifyOTP() {
 
     setError('');
     setLoading(true);
-    
+
     try {
       const res = await verifyOTP(email, code);
       if (res.success) {
@@ -62,13 +62,13 @@ export default function VerifyOTP() {
 
   const handleResend = async () => {
     if (resendCooldown > 0) return;
-    
+
     setError('');
     setResendStatus('Sending new OTP code...');
-    
+
     try {
-      const res = await client.post('/auth/login', { 
-        emailOrUsername: email, 
+      const res = await client.post('/auth/login', {
+        emailOrUsername: email,
         password: 'dummy_trigger_resend_via_login' // The backend login detects unverified and triggers a resend
       });
     } catch (err) {
@@ -86,11 +86,14 @@ export default function VerifyOTP() {
     <div className="otp-page-wrapper">
       <div className="otp-container-box">
         <div className="brand-logo">ORAVIA</div>
-        
+
         <h2>Verify Your Email</h2>
         <p className="otp-desc">
           We sent a 6-digit verification code to <span className="email-highlight">{email}</span>
         </p>
+        <div className="otp-spam-note">
+          Didn't get the code? Please check your <strong>Spam or Junk folder</strong> too.
+        </div>
 
         {error && <div className="otp-alert error">{error}</div>}
         {resendStatus && <div className="otp-alert success">{resendStatus}</div>}
@@ -165,7 +168,19 @@ export default function VerifyOTP() {
           font-size: 14px;
           color: #a1a1aa;
           line-height: 1.5;
+          margin-bottom: 10px;
+        }
+
+        .otp-spam-note {
+          font-size: 13px;
+          color: #fbbf24;
+          line-height: 1.5;
           margin-bottom: 28px;
+          background-color: rgba(251, 191, 36, 0.1);
+          border: 1px solid rgba(251, 191, 36, 0.25);
+          border-radius: 8px;
+          padding: 10px 14px;
+          font-weight: 600;
         }
 
         .email-highlight {

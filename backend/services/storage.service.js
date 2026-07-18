@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
 import util from 'util';
+import os from 'os';
 
 const execPromise = util.promisify(exec);
 
@@ -126,6 +127,33 @@ class StorageService {
     } catch (err) {
       console.error('Failed to generate video thumbnail:', err.message);
       return '';
+    }
+  }
+
+  async generateVideoThumbnailFromBuffer(fileBuffer, folder = 'posts') {
+    const uniqueId = crypto.randomBytes(16).toString('hex');
+    const tempDir = os.tmpdir();
+    const tempVideoPath = path.join(tempDir, uniqueId + '-src.mp4');
+    const tempThumbPath = path.join(tempDir, uniqueId + '-thumb.jpg');
+
+    try {
+      fs.writeFileSync(tempVideoPath, fileBuffer);
+      const command = 'ffmpeg -y -ss 1 -i "' + tempVideoPath + '" -vframes 1 -q:v 4 "' + tempThumbPath + '"';
+      await execPromise(command);
+
+      const thumbBuffer = fs.readFileSync(tempThumbPath);
+      const thumbFile = {
+        buffer: thumbBuffer,
+        originalname: uniqueId + '-thumb.jpg',
+        mimetype: 'image/jpeg',
+      };
+      return await this.uploadFile(thumbFile, folder);
+    } catch (err) {
+      console.error('Failed to generate video thumbnail from buffer:', err.message);
+      return '';
+    } finally {
+      try { if (fs.existsSync(tempVideoPath)) fs.unlinkSync(tempVideoPath); } catch (e) {}
+      try { if (fs.existsSync(tempThumbPath)) fs.unlinkSync(tempThumbPath); } catch (e) {}
     }
   }
 

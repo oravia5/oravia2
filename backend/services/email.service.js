@@ -7,8 +7,8 @@ function getTransporter() {
     _transporter = nodemailer.createTransport({
       service: process.env.SMTP_SERVICE || 'gmail',
       auth: {
-        user: process.env.SMTP_USER || 'oraviapvtltd5@gmail.com',
-        pass: process.env.SMTP_PASS || 'urlt valv fkxw yqeq',
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
     });
   }
@@ -24,12 +24,12 @@ function getTransporter() {
  */
 export const sendOTPEmail = async (toEmail, otpCode, purpose) => {
   const isRegister = purpose === 'register';
-  
+
   const title = isRegister ? 'Verify Your Oravia Account' : 'Reset Your Oravia Password';
-  const subtitle = isRegister 
-    ? 'Welcome to Oravia! Please use the OTP code below to verify your email and activate your account.' 
+  const subtitle = isRegister
+    ? 'Welcome to Oravia! Please use the OTP code below to verify your email and activate your account.'
     : 'We received a request to reset your password. Use the OTP code below to complete the reset process.';
-  
+
   const mailOptions = {
     from: process.env.SMTP_FROM || '"Oravia Admin" <oraviapvtltd5@gmail.com>',
     to: toEmail,

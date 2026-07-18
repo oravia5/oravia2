@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera } from 'lucide-react';
@@ -78,6 +78,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const { user, updateUserData, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const carouselRef = useRef(null);
+  const postCardRef = useRef(null);
 
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with posts');
@@ -165,6 +166,40 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const [touchDelta, setTouchDelta] = useState(0);
 
 
+
+  // Auto-pause & mute video when the post scrolls out of view
+  useEffect(() => {
+    const node = postCardRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            const video = node.querySelector('video');
+            if (video && !video.paused) {
+              video.pause();
+              video.muted = true;
+            }
+            setIsPlaying(false);
+            setIsMuted(true);
+            setVideoPlayingStates(prev => {
+              const updated = {};
+              Object.keys(prev).forEach((k) => { updated[k] = false; });
+              return updated;
+            });
+            setVideoMutedStates(prev => {
+              const updated = {};
+              Object.keys(prev).forEach((k) => { updated[k] = true; });
+              return updated;
+            });
+          }
+        });
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const isLiked = likes.some(id => id.toString() === user?._id?.toString());
   const isDisliked = dislikes.some(id => id.toString() === user?._id?.toString());
@@ -384,7 +419,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   return (
-    <div className="post-card animate-fade">
+    <div className="post-card animate-fade" ref={postCardRef}>
       {/* Header */}
       <div className="post-header">
         <div className="author-header-left">
@@ -519,8 +554,22 @@ export default function PostCard({ post, onDeleteSuccess }) {
                         <Volume2 size={16} color={(videoMutedStates[idx] !== undefined ? videoMutedStates[idx] : true) ? '#ef4444' : '#22c55e'} />
                       </button>
                       {videoPlayingStates[idx] && (
-                        <div className="video-progress-track">
-                          <div className="video-progress-fill" style={{ width: `${videoProgressStates[idx] || 0}%` }} />
+                        <div
+                          className="video-progress-hitzone"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+                            const video = e.currentTarget.closest('.video-wrapper').querySelector('video');
+                            if (video && video.duration) {
+                              video.currentTime = percent * video.duration;
+                              setVideoProgressStates(prev => ({ ...prev, [idx]: percent * 100 }));
+                            }
+                          }}
+                        >
+                          <div className="video-progress-track">
+                            <div className="video-progress-fill" style={{ width: `${videoProgressStates[idx] || 0}%` }} />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -616,8 +665,22 @@ export default function PostCard({ post, onDeleteSuccess }) {
                   <Volume2 size={16} color={isMuted ? '#ef4444' : '#22c55e'} />
                 </button>
                 {isPlaying && (
-                  <div className="video-progress-track">
-                    <div className="video-progress-fill" style={{ width: `${singleVideoProgress}%` }} />
+                  <div
+                    className="video-progress-hitzone"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+                      const video = e.currentTarget.closest('.video-wrapper').querySelector('video');
+                      if (video && video.duration) {
+                        video.currentTime = percent * video.duration;
+                        setSingleVideoProgress(percent * 100);
+                      }
+                    }}
+                  >
+                    <div className="video-progress-track">
+                      <div className="video-progress-fill" style={{ width: `${singleVideoProgress}%` }} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1016,14 +1079,23 @@ export default function PostCard({ post, onDeleteSuccess }) {
           cursor: pointer;
         }
 
-        .video-progress-track {
+        .video-progress-hitzone {
           position: absolute;
           bottom: 0;
           left: 0;
           right: 0;
+          height: 24px;
+          z-index: 3;
+          cursor: pointer;
+          display: flex;
+          align-items: flex-end;
+        }
+
+        .video-progress-track {
+          position: relative;
+          width: 100%;
           height: 3px;
           background: rgba(255,255,255,0.2);
-          z-index: 2;
         }
 
         .video-progress-fill {

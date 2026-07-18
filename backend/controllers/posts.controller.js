@@ -328,7 +328,7 @@ export const createPost = async (req, res) => {
       const url = await StorageService.uploadFile(file, 'posts');
       let thumb = url;
       if (isVideo) {
-        const videoThumb = await StorageService.generateVideoThumbnail(url, 'posts');
+        const videoThumb = await StorageService.generateVideoThumbnailFromBuffer(file.buffer, 'posts');
         if (videoThumb) {
           thumb = videoThumb;
         }
