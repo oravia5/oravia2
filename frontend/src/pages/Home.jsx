@@ -6,6 +6,7 @@ import PostCard from '../components/PostCard/PostCard';
 import ReelCard from '../components/ReelCard/ReelCard';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import OraviaLogo from '../components/OraviaLogo/OraviaLogo';
 
 export default function Home() {
   const [feedItems, setFeedItems] = useState([]);
@@ -155,7 +156,7 @@ export default function Home() {
       {/* Header Bar */}
       <header className="glass-header">
         <div className="brand-logo-container" onClick={() => navigate('/')}>
-          <Sparkles className="logo-spark" size={18} />
+          <OraviaLogo className="logo-spark" size={18} />
           <span className="brand-logo">Oravia</span>
         </div>
         <div className="top-nav-actions">

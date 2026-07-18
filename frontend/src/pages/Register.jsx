@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Sparkles, User, Mail, Lock, Phone, Camera, AlertCircle, ArrowRight, Check, X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
+import OraviaLogo from '../components/OraviaLogo/OraviaLogo';
 
 export default function Register() {
   const { register } = useAuth();
@@ -88,7 +89,7 @@ export default function Register() {
         {/* Logo Section */}
         <div className="auth-logo-section">
           <div className="logo-glow">
-            <Sparkles size={36} className="logo-icon" />
+            <OraviaLogo size={36} className="logo-icon" />
           </div>
           <h1>Create Account</h1>
           <p className="auth-subtitle">Join Oravia and connect moments that matter</p>

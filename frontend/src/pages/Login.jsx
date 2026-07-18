@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Sparkles, Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import OraviaLogo from '../components/OraviaLogo/OraviaLogo';
 
 export default function Login() {
   const { login } = useAuth();
@@ -48,7 +49,7 @@ export default function Login() {
         {/* Logo and Brand */}
         <div className="auth-logo-section">
           <div className="logo-glow">
-            <Sparkles size={36} className="logo-icon" />
+            <OraviaLogo size={36} className="logo-icon" />
           </div>
           <h1>Oravia</h1>
           <p className="auth-subtitle">Connecting moments that matter</p>

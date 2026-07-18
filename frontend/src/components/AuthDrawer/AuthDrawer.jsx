@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, X, ShieldAlert } from 'lucide-react';
+import OraviaLogo from '../OraviaLogo/OraviaLogo';
 
 export default function AuthDrawer({ isOpen, onClose, actionText = 'interact with posts' }) {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function AuthDrawer({ isOpen, onClose, actionText = 'interact wit
         {/* Header */}
         <div className="drawer-header">
           <div className="drawer-logo">
-            <Sparkles size={20} className="logo-spark" />
+            <OraviaLogo size={20} className="logo-spark" />
             <span>Oravia Community</span>
           </div>
           <button className="drawer-close-btn" onClick={onClose} aria-label="Close">
