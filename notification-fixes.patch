@@ -1,0 +1,106 @@
+diff --git a/backend/controllers/posts.controller.js b/backend/controllers/posts.controller.js
+index d634d5c..e2dad48 100644
+--- a/backend/controllers/posts.controller.js
++++ b/backend/controllers/posts.controller.js
+@@ -605,6 +605,16 @@ export const dislikePost = async (req, res) => {
+     }
+ 
+     await post.save();
++
++    if (post.dislikes.some((id) => id.equals(userId))) {
++      createNotification({
++        recipient: post.author,
++        actor: userId,
++        type: 'dislike',
++        post: post._id,
++      });
++    }
++
+     res.json({
+       success: true,
+       data: {
+diff --git a/backend/models/Notification.js b/backend/models/Notification.js
+index 3ce3036..4cefc9f 100644
+--- a/backend/models/Notification.js
++++ b/backend/models/Notification.js
+@@ -15,7 +15,7 @@ const notificationSchema = new mongoose.Schema(
+     },
+     type: {
+       type: String,
+-      enum: ['like', 'comment', 'follow', 'share', 'comment_like'],
++      enum: ['like', 'dislike', 'comment', 'follow', 'share', 'comment_like'],
+       required: [true, 'Notification type is required'],
+     },
+     post: {
+diff --git a/backend/services/notification.service.js b/backend/services/notification.service.js
+index fee9b3a..e793a4b 100644
+--- a/backend/services/notification.service.js
++++ b/backend/services/notification.service.js
+@@ -56,7 +56,7 @@ export const getNotifications = async (userId, page = 1, limit = 20) => {
+       .skip(skip)
+       .limit(limit)
+       .populate('actor', '_id username displayName avatarUrl')
+-      .populate('post', '_id mediaUrl type')
++      .populate('post', '_id mediaUrl thumbnailUrl type')
+       .populate('comment', '_id text');
+ 
+     const total = await Notification.countDocuments({ recipient: userId });
+diff --git a/frontend/src/pages/Notifications.jsx b/frontend/src/pages/Notifications.jsx
+index 78f165c..791b932 100644
+--- a/frontend/src/pages/Notifications.jsx
++++ b/frontend/src/pages/Notifications.jsx
+@@ -11,6 +11,7 @@ import { getFullMediaUrl } from '../utils/mediaUrl';
+ const getNotificationText = (type) => {
+   switch (type) {
+     case 'like': return 'liked your post';
++    case 'dislike': return 'disliked your post';
+     case 'comment': return 'commented on your post';
+     case 'follow': return 'started following you';
+     case 'share': return 'shared your post';
+@@ -22,6 +23,7 @@ const getNotificationText = (type) => {
+ const getNotificationIcon = (type) => {
+   switch (type) {
+     case 'like': return <Heart size={16} fill="#f43f5e" color="#f43f5e" />;
++    case 'dislike': return <Heart size={16} color="#71717a" style={{ transform: 'rotate(180deg)' }} />;
+     case 'comment': return <MessageCircle size={16} color="#3b82f6" />;
+     case 'follow': return <UserPlus size={16} color="#22c55e" />;
+     case 'share': return <Share2 size={16} color="#eab308" />;
+@@ -196,17 +198,27 @@ export default function Notifications() {
+                     </button>
+                   )}
+ 
+-                  {n.post?.mediaUrl && (
+-                    <div 
+-                      className="post-preview-thumbnail"
+-                      onClick={(e) => {
+-                        e.stopPropagation();
+-                        navigate(`/post/${n.post._id || n.post}`);
+-                      }}
+-                    >
+-                      <img src={getFullMediaUrl(n.post.mediaUrl)} alt="Post preview" />
+-                    </div>
+-                  )}
++                  {n.post?.mediaUrl && (() => {
++                    // Photos can use mediaUrl directly, but video/reel posts need
++                    // thumbnailUrl since mediaUrl points to a video file, not an image.
++                    const previewSrc = n.post.type === 'photo'
++                      ? n.post.mediaUrl
++                      : (n.post.thumbnailUrl || null);
++
++                    if (!previewSrc) return null;
++
++                    return (
++                      <div
++                        className="post-preview-thumbnail"
++                        onClick={(e) => {
++                          e.stopPropagation();
++                          navigate(`/post/${n.post._id || n.post}`);
++                        }}
++                      >
++                        <img src={getFullMediaUrl(previewSrc)} alt="Post preview" />
++                      </div>
++                    );
++                  })()}
+                 </div>
+               </div>
+             ))}

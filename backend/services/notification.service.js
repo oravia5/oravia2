@@ -56,7 +56,7 @@ export const getNotifications = async (userId, page = 1, limit = 20) => {
       .skip(skip)
       .limit(limit)
       .populate('actor', '_id username displayName avatarUrl')
-      .populate('post', '_id mediaUrl type')
+      .populate('post', '_id mediaUrl thumbnailUrl type')
       .populate('comment', '_id text');
 
     const total = await Notification.countDocuments({ recipient: userId });

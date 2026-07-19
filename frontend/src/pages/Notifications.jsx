@@ -11,6 +11,7 @@ import { getFullMediaUrl } from '../utils/mediaUrl';
 const getNotificationText = (type) => {
   switch (type) {
     case 'like': return 'liked your post';
+    case 'dislike': return 'disliked your post';
     case 'comment': return 'commented on your post';
     case 'follow': return 'started following you';
     case 'share': return 'shared your post';
@@ -22,6 +23,7 @@ const getNotificationText = (type) => {
 const getNotificationIcon = (type) => {
   switch (type) {
     case 'like': return <Heart size={16} fill="#f43f5e" color="#f43f5e" />;
+    case 'dislike': return <Heart size={16} color="#71717a" style={{ transform: 'rotate(180deg)' }} />;
     case 'comment': return <MessageCircle size={16} color="#3b82f6" />;
     case 'follow': return <UserPlus size={16} color="#22c55e" />;
     case 'share': return <Share2 size={16} color="#eab308" />;
@@ -196,17 +198,27 @@ export default function Notifications() {
                     </button>
                   )}
 
-                  {n.post?.mediaUrl && (
-                    <div 
-                      className="post-preview-thumbnail"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/post/${n.post._id || n.post}`);
-                      }}
-                    >
-                      <img src={getFullMediaUrl(n.post.mediaUrl)} alt="Post preview" />
-                    </div>
-                  )}
+                  {n.post?.mediaUrl && (() => {
+                    // Photos can use mediaUrl directly, but video/reel posts need
+                    // thumbnailUrl since mediaUrl points to a video file, not an image.
+                    const previewSrc = n.post.type === 'photo'
+                      ? n.post.mediaUrl
+                      : (n.post.thumbnailUrl || null);
+
+                    if (!previewSrc) return null;
+
+                    return (
+                      <div
+                        className="post-preview-thumbnail"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/post/${n.post._id || n.post}`);
+                        }}
+                      >
+                        <img src={getFullMediaUrl(previewSrc)} alt="Post preview" />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             ))}

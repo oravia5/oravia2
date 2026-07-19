@@ -605,6 +605,16 @@ export const dislikePost = async (req, res) => {
     }
 
     await post.save();
+
+    if (post.dislikes.some((id) => id.equals(userId))) {
+      createNotification({
+        recipient: post.author,
+        actor: userId,
+        type: 'dislike',
+        post: post._id,
+      });
+    }
+
     res.json({
       success: true,
       data: {
