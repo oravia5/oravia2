@@ -23,6 +23,7 @@
   
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+  --bottom-nav-height: 76px;
   
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color-scheme: dark;
@@ -98,7 +99,7 @@ h1, h2, h3, h4, .brand-logo {
   flex-direction: column;
   position: relative;
   background-color: var(--bg-primary);
-  padding-bottom: calc(65px + var(--safe-bottom));
+  padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom));
 }
 
 /* Desktop Blocker - shown on screens wider than 480px */
@@ -160,7 +161,8 @@ h1, h2, h3, h4, .brand-logo {
 
 /* Custom layout for scroll snap on Reels */
 .reels-container {
-  height: calc(100vh - 65px - var(--safe-bottom));
+  height: calc(100vh - var(--bottom-nav-height) - var(--safe-bottom));
+  height: calc(100dvh - var(--bottom-nav-height) - var(--safe-bottom));
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   overscroll-behavior-y: none;
@@ -172,7 +174,8 @@ h1, h2, h3, h4, .brand-logo {
 }
 
 .reel-item {
-  height: calc(100vh - 65px - var(--safe-bottom));
+  height: calc(100vh - var(--bottom-nav-height) - var(--safe-bottom));
+  height: calc(100dvh - var(--bottom-nav-height) - var(--safe-bottom));
   scroll-snap-align: start;
   position: relative;
   background-color: #000;

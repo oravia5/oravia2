@@ -8,6 +8,8 @@ import {
   deletePost,
   likePost,
   dislikePost,
+  getPostLikes,
+  getPostDislikes,
   savePost,
   unsavePost,
   sharePost,
@@ -36,6 +38,8 @@ router.get('/:id', getPostById);
 router.delete('/:id', protect, deletePost);
 router.post('/:id/like', protect, likePost);
 router.post('/:id/dislike', protect, dislikePost);
+router.get('/:id/likes', getPostLikes);
+router.get('/:id/dislikes', getPostDislikes);
 router.post('/:id/save', protect, savePost);
 router.post('/:id/unsave', protect, unsavePost);
 router.put('/:id', protect, postUpload, updatePost);

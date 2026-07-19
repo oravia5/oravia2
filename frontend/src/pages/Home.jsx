@@ -35,6 +35,36 @@ export default function Home() {
   const loaderRef = useRef(null);
   const navigate = useNavigate();
 
+  const [showTopBar, setShowTopBar] = useState(true);
+  const lastScrollY = useRef(0);
+  const scrollTicking = useRef(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollTicking.current) return;
+      scrollTicking.current = true;
+
+      requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        const delta = currentScrollY - lastScrollY.current;
+
+        if (currentScrollY <= 20) {
+          setShowTopBar(true);
+        } else if (delta > 5) {
+          setShowTopBar(false);
+        } else if (delta < -5) {
+          setShowTopBar(true);
+        }
+
+        lastScrollY.current = currentScrollY;
+        scrollTicking.current = false;
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
@@ -153,47 +183,48 @@ export default function Home() {
 
   return (
     <div className="page-container">
-      {/* Header Bar */}
-      <header className="glass-header">
-        <div className="brand-logo-container" onClick={() => navigate('/')}>
-          <OraviaLogo className="logo-spark" size={18} />
-          <span className="brand-logo">Oravia</span>
-        </div>
-        <div className="top-nav-actions">
-          <button className="top-action-btn" onClick={() => navigate('/search')} aria-label="Search Profiles">
-            <Search size={18} />
-          </button>
-          <button className="top-action-btn" onClick={() => navigate('/notifications')} aria-label="Notifications">
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="top-bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-              )}
-            </div>
-          </button>
-        </div>
-      </header>
+      {/* Auto-hide Top Bar: Header + Sticky Tabs (Instagram-style) */}
+      <div className={`top-bar-wrapper ${showTopBar ? '' : 'top-bar-hidden'}`}>
+        <header className="glass-header">
+          <div className="brand-logo-container" onClick={() => navigate('/')}>
+            <OraviaLogo className="logo-spark" size={18} />
+            <span className="brand-logo">Oravia</span>
+          </div>
+          <div className="top-nav-actions">
+            <button className="top-action-btn" onClick={() => navigate('/search')} aria-label="Search Profiles">
+              <Search size={18} />
+            </button>
+            <button className="top-action-btn" onClick={() => navigate('/notifications')} aria-label="Notifications">
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="top-bell-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                )}
+              </div>
+            </button>
+          </div>
+        </header>
 
-      {/* Sticky Tabs Bar */}
-      <div className="timeline-tabs-container">
-        <button 
-          className={`tab-btn ${activeTab === 'for-you' ? 'active' : ''}`}
-          onClick={() => setActiveTab('for-you')}
-        >
-          <span>For You</span>
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'following' ? 'active' : ''}`}
-          onClick={() => setActiveTab('following')}
-        >
-          <span>Following</span>
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'near-you' ? 'active' : ''}`}
-          onClick={() => setActiveTab('near-you')}
-        >
-          <span>Near You</span>
-        </button>
+        <div className="timeline-tabs-container">
+          <button 
+            className={`tab-btn ${activeTab === 'for-you' ? 'active' : ''}`}
+            onClick={() => setActiveTab('for-you')}
+          >
+            <span>For You</span>
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'following' ? 'active' : ''}`}
+            onClick={() => setActiveTab('following')}
+          >
+            <span>Following</span>
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'near-you' ? 'active' : ''}`}
+            onClick={() => setActiveTab('near-you')}
+          >
+            <span>Near You</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -358,6 +389,25 @@ export default function Home() {
           width: 100%;
           min-height: 100vh;
           background-color: #000000;
+          padding-top: 108px;
+        }
+
+        .top-bar-wrapper {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
+          transform: translateY(0);
+          transition: transform 0.3s ease;
+        }
+
+        .top-bar-wrapper.top-bar-hidden {
+          transform: translateY(-100%);
+        }
+
+        .top-bar-wrapper .glass-header {
+          position: static;
         }
 
         .pwa-install-banner {
@@ -728,9 +778,6 @@ export default function Home() {
         }
 
         .timeline-tabs-container {
-          position: sticky;
-          top: 60px;
-          z-index: 99;
           background: rgba(0, 0, 0, 0.9);
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);

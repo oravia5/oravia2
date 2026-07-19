@@ -77,9 +77,12 @@ export default function Notifications() {
     const data = await fetchNotifications(1);
     if (data && data.notifications) {
       await syncFollowMap(data.notifications);
+      if (data.unread > 0) {
+        await markAllAsRead();
+      }
     }
     setListLoading(false);
-  }, [fetchNotifications, syncFollowMap]);
+  }, [fetchNotifications, syncFollowMap, markAllAsRead]);
 
   useEffect(() => {
     loadNotificationsData();

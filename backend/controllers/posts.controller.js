@@ -622,6 +622,86 @@ export const dislikePost = async (req, res) => {
 };
 
 /**
+ * @desc    Get list of users who liked a post (with pagination)
+ * @route   GET /api/posts/:id/likes
+ * @access  Public
+ */
+export const getPostLikes = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const skip = (page - 1) * limit;
+
+    const post = await Post.findById(req.params.id).select('likes');
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    const total = post.likes.length;
+    const pageIds = post.likes.slice().reverse().slice(skip, skip + limit);
+
+    const users = await User.find({ _id: { $in: pageIds } })
+      .select('_id username displayName avatarUrl');
+
+    const orderedUsers = pageIds
+      .map((id) => users.find((u) => u._id.toString() === id.toString()))
+      .filter(Boolean);
+
+    res.json({
+      success: true,
+      data: orderedUsers,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error fetching likes' });
+  }
+};
+
+/**
+ * @desc    Get list of users who disliked a post (with pagination)
+ * @route   GET /api/posts/:id/dislikes
+ * @access  Public
+ */
+export const getPostDislikes = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+    const skip = (page - 1) * limit;
+
+    const post = await Post.findById(req.params.id).select('dislikes');
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    const total = post.dislikes.length;
+    const pageIds = post.dislikes.slice().reverse().slice(skip, skip + limit);
+
+    const users = await User.find({ _id: { $in: pageIds } })
+      .select('_id username displayName avatarUrl');
+
+    const orderedUsers = pageIds
+      .map((id) => users.find((u) => u._id.toString() === id.toString()))
+      .filter(Boolean);
+
+    res.json({
+      success: true,
+      data: orderedUsers,
+      total,
+      page,
+      limit,
+      hasMore: skip + limit < total,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error fetching dislikes' });
+  }
+};
+
+/**
  * @desc    Save/bookmark a post
  * @route   POST /api/posts/:id/save
  * @access  Private

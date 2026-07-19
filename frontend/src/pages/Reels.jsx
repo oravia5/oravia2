@@ -158,7 +158,8 @@ export default function Reels() {
       <style>{`
         .reels-page {
           width: 100%;
-          height: calc(100vh - 65px - var(--safe-bottom));
+          height: calc(100vh - var(--bottom-nav-height) - var(--safe-bottom));
+          height: calc(100dvh - var(--bottom-nav-height) - var(--safe-bottom));
           background: #000;
           overflow: hidden;
         }
@@ -204,10 +205,10 @@ export default function Reels() {
 
         .create-reel-fab {
           position: fixed;
-          bottom: 90px;
+          top: 66px;
           right: 20px;
-          width: 52px;
-          height: 52px;
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           background: var(--accent-indigo);
           color: #000;

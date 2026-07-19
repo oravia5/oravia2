@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
+import LikesSheet from '../LikesSheet/LikesSheet';
 
 const POPULAR_LOCATIONS = [
   'Mumbai, Maharashtra, India',
@@ -150,6 +151,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const [shareCount, setShareCount] = useState(post.shareCount || 0);
   
   const [showComments, setShowComments] = useState(false);
+  const [showLikesSheet, setShowLikesSheet] = useState(false);
+  const [likesSheetTab, setLikesSheetTab] = useState('likes');
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -832,7 +835,15 @@ export default function PostCard({ post, onDeleteSuccess }) {
             aria-label="Like"
           >
             <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-            <span>{likes.length}</span>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                setLikesSheetTab('likes');
+                setShowLikesSheet(true);
+              }}
+            >
+              {likes.length}
+            </span>
           </button>
 
           <button 
@@ -841,7 +852,15 @@ export default function PostCard({ post, onDeleteSuccess }) {
             aria-label="Dislike"
           >
             <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
-            <span>{dislikes.length}</span>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                setLikesSheetTab('dislikes');
+                setShowLikesSheet(true);
+              }}
+            >
+              {dislikes.length}
+            </span>
           </button>
 
           <button 
@@ -897,6 +916,16 @@ export default function PostCard({ post, onDeleteSuccess }) {
           postId={post._id} 
           onClose={() => setShowComments(false)}
           onCommentCountChange={setCommentCount} 
+        />
+      )}
+
+      {showLikesSheet && (
+        <LikesSheet
+          postId={post._id}
+          initialTab={likesSheetTab}
+          likeCount={likes.length}
+          dislikeCount={dislikes.length}
+          onClose={() => setShowLikesSheet(false)}
         />
       )}
 

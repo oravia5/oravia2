@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
+import LikesSheet from '../LikesSheet/LikesSheet';
 
 export default React.memo(function ReelPlayer({ reel, isActive }) {
   const { user, isAuthenticated } = useAuth();
@@ -46,6 +47,8 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
   const [isMuted, setIsMuted] = useState(true);
   const [reelProgress, setReelProgress] = useState(0);
   const [showComments, setShowComments] = useState(false);
+  const [showLikesSheet, setShowLikesSheet] = useState(false);
+  const [likesSheetTab, setLikesSheetTab] = useState('likes');
   const [commentCount, setCommentCount] = useState(0);
 
   const videoRef = useRef(null);
@@ -218,12 +221,28 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
       <div className="reel-sidebar" onClick={(e) => e.stopPropagation()}>
         <button className={`sidebar-btn ${isLiked ? 'liked' : ''}`} onClick={handleLike} aria-label="Like">
           <Heart size={26} fill={isLiked ? 'currentColor' : 'none'} />
-          <span>{likes.length}</span>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              setLikesSheetTab('likes');
+              setShowLikesSheet(true);
+            }}
+          >
+            {likes.length}
+          </span>
         </button>
 
         <button className={`sidebar-btn ${isDisliked ? 'disliked' : ''}`} onClick={handleDislike} aria-label="Dislike">
           <ThumbsDown size={26} fill={isDisliked ? 'currentColor' : 'none'} />
-          <span>{dislikes.length}</span>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              setLikesSheetTab('dislikes');
+              setShowLikesSheet(true);
+            }}
+          >
+            {dislikes.length}
+          </span>
         </button>
 
         <button 
@@ -271,6 +290,16 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
           postId={reel._id}
           onClose={() => setShowComments(false)}
           onCommentCountChange={setCommentCount}
+        />
+      )}
+
+      {showLikesSheet && (
+        <LikesSheet
+          postId={reel._id}
+          initialTab={likesSheetTab}
+          likeCount={likes.length}
+          dislikeCount={dislikes.length}
+          onClose={() => setShowLikesSheet(false)}
         />
       )}
 
