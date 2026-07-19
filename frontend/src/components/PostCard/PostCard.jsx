@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { queueView } from '../../utils/viewTracker';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -80,6 +81,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const navigate = useNavigate();
   const carouselRef = useRef(null);
   const postCardRef = useRef(null);
+  const hasCountedView = useRef(false);
 
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with posts');
@@ -213,7 +215,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const mediaItems = hasCarousel
     ? post.mediaItems
     : post.mediaUrl
-      ? [{ url: post.mediaUrl, type: post.type === 'video' ? 'video' : 'photo', thumbnailUrl: post.thumbnailUrl || '' }]
+      ? [{ url: post.mediaUrl, type: (post.type === 'video' || post.type === 'reel') ? 'video' : 'photo', thumbnailUrl: post.thumbnailUrl || '' }]
       : [];
 
   const goToSlide = useCallback((index) => {
@@ -299,6 +301,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
     const video = e.target;
     if (video.duration) {
       setVideoProgressStates(prev => ({ ...prev, [index]: (video.currentTime / video.duration) * 100 }));
+    }
+    if (!hasCountedView.current && video.currentTime >= 2) {
+      hasCountedView.current = true;
+      queueView(post._id);
     }
   };
 
@@ -649,6 +655,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
                   onTimeUpdate={(e) => {
                     const v = e.target;
                     if (v.duration) setSingleVideoProgress((v.currentTime / v.duration) * 100);
+                    if (!hasCountedView.current && v.currentTime >= 2) {
+                      hasCountedView.current = true;
+                      queueView(post._id);
+                    }
                   }}
                 />
                 {!isPlaying && (
@@ -879,6 +889,13 @@ export default function PostCard({ post, onDeleteSuccess }) {
             <MessageCircle size={22} />
             <span>{commentCount}</span>
           </button>
+
+          {(post.type === 'video' || post.type === 'reel') && post.views > 0 && (
+            <span className="views-count" aria-label="Views">
+              <Eye size={18} />
+              {post.views}
+            </span>
+          )}
         </div>
 
         <div className="actions-right">
@@ -1132,6 +1149,15 @@ export default function PostCard({ post, onDeleteSuccess }) {
           background: #ffffff;
           transition: width 0.25s linear;
           border-radius: 0 2px 2px 0;
+        }
+
+        .views-count {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 13px;
+          color: var(--text-muted);
+          margin-left: 4px;
         }
 
         .post-actions {

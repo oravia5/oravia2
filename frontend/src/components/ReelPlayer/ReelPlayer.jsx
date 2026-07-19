@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2 } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye } from 'lucide-react';
+import { queueView } from '../../utils/viewTracker';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -52,6 +53,7 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
   const [commentCount, setCommentCount] = useState(0);
 
   const videoRef = useRef(null);
+  const hasCountedView = useRef(false);
 
 
 
@@ -180,6 +182,10 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
         onTimeUpdate={(e) => {
           const v = e.target;
           if (v.duration) setReelProgress((v.currentTime / v.duration) * 100);
+          if (!hasCountedView.current && v.currentTime >= 2) {
+            hasCountedView.current = true;
+            queueView(reel._id);
+          }
         }}
       />
 
@@ -219,6 +225,13 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
 
       {/* Actions Sidebar (Likes, Dislikes, Comments, Shares, Bookmark) */}
       <div className="reel-sidebar" onClick={(e) => e.stopPropagation()}>
+        {reel.views > 0 && (
+          <div className="sidebar-btn views-stat" aria-label="Views">
+            <Eye size={26} />
+            <span>{reel.views}</span>
+          </div>
+        )}
+
         <button className={`sidebar-btn ${isLiked ? 'liked' : ''}`} onClick={handleLike} aria-label="Like">
           <Heart size={26} fill={isLiked ? 'currentColor' : 'none'} />
           <span
@@ -380,6 +393,10 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
         }
 
         /* Sidebar overlays */
+        .views-stat {
+          cursor: default;
+        }
+
         .reel-sidebar {
           position: absolute;
           right: 12px;

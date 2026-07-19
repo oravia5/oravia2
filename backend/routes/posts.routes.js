@@ -20,12 +20,14 @@ import {
   updatePost,
   archivePost,
   unarchivePost,
+  batchIncrementViews,
 } from '../controllers/posts.controller.js';
 import { protect, optionalAuth } from '../middleware/auth.middleware.js';
 import { validateUploadLimit, postUpload } from '../middleware/upload.middleware.js';
 
 const router = express.Router();
 
+router.post('/views/batch', batchIncrementViews);
 router.get('/', protect, getPosts);
 router.get('/feed', optionalAuth, getFeed);
 router.get('/following', protect, getFollowingFeed);

@@ -786,6 +786,39 @@ export const unsavePost = async (req, res) => {
 };
 
 /**
+ * @desc    Batch-increment view counts for multiple posts in one lightweight write.
+ * @route   POST /api/posts/views/batch
+ * @access  Public
+ */
+export const batchIncrementViews = async (req, res) => {
+  try {
+    const { postIds } = req.body;
+
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'postIds array is required' });
+    }
+
+    const safeIds = postIds.filter((id) => typeof id === 'string').slice(0, 200);
+
+    const bulkOps = safeIds.map((id) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $inc: { views: 1 } },
+      },
+    }));
+
+    if (bulkOps.length > 0) {
+      await Post.bulkWrite(bulkOps, { ordered: false });
+    }
+
+    res.json({ success: true, counted: bulkOps.length });
+  } catch (error) {
+    console.error('batchIncrementViews error:', error.message);
+    res.json({ success: false });
+  }
+};
+
+/**
  * @desc    Increment share count & return shareable link
  * @route   POST /api/posts/:id/share
  * @access  Public
