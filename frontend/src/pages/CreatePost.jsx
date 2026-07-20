@@ -773,7 +773,7 @@ export default function CreatePost() {
             </div>
           )}
 
-          {!isReelMode && selectedFiles.length === 1 && selectedFiles[0].type.startsWith('video/') && (
+          {!isReel && !isReelMode && selectedFiles.length === 1 && selectedFiles[0].type.startsWith('video/') && (
             <div className="form-group checkbox-wrapper">
               <label className="checkbox-container">
                 <input
