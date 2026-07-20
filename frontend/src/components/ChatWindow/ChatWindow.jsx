@@ -37,9 +37,9 @@ function TypingIndicator({ otherUserName }) {
 }
 
 /* ── Presence dot ── */
-function PresenceDot() {
+function PresenceDot({ otherUserId }) {
   const { presenceData } = usePresenceListener();
-  const isOnline = presenceData.length > 0;
+  const isOnline = presenceData.some(member => member.clientId === otherUserId);
   return (
     <span
       className={`presence-dot ${isOnline ? 'online' : 'offline'}`}
@@ -292,7 +292,7 @@ function ChatRoom({ channelId, otherUser, onBack }) {
             {otherUser?.avatarUrl && (
               <img src={otherUser.avatarUrl} alt="" className="mini-avatar" />
             )}
-            <PresenceDot />
+            <PresenceDot otherUserId={otherUser?._id} />
           </div>
           <div>
             <h6>{otherUser?.displayName || otherUser?.username}</h6>
