@@ -94,6 +94,7 @@ export const getUserProfile = async (req, res) => {
         dob: user.dob || null,
         profession: user.profession || '',
         gender: user.gender || '',
+        phone: (user.profileVisibilityControls?.showPhone !== false || (req.user && req.user._id.toString() === user._id.toString())) ? (user.phone || '') : '',
         createdAt: user.createdAt,
         blockedUsers: user.blockedUsers || [],
         profileVisibilityControls: user.profileVisibilityControls || {
@@ -103,6 +104,7 @@ export const getUserProfile = async (req, res) => {
           showDob: true,
           showProfession: true,
           showGender: true,
+          showPhone: true,
         },
       },
     });
@@ -140,12 +142,14 @@ export const updateProfile = async (req, res) => {
       dob, 
       profession, 
       gender, 
+      phone,
       showWebsite, 
       showLocation, 
       showJoinedDate,
       showDob,
       showProfession,
       showGender,
+      showPhone,
       showNSFW
     } = req.body;
 
@@ -174,6 +178,7 @@ export const updateProfile = async (req, res) => {
     if (dob !== undefined) user.dob = dob ? new Date(dob) : null;
     if (profession !== undefined) user.profession = profession;
     if (gender !== undefined) user.gender = gender;
+    if (phone !== undefined) user.phone = phone.trim();
 
     if (!user.profileVisibilityControls) {
       user.profileVisibilityControls = {
@@ -183,6 +188,7 @@ export const updateProfile = async (req, res) => {
         showDob: true,
         showProfession: true,
         showGender: true,
+        showPhone: true,
       };
     }
 
@@ -203,6 +209,9 @@ export const updateProfile = async (req, res) => {
     }
     if (showGender !== undefined) {
       user.profileVisibilityControls.showGender = showGender === 'true' || showGender === true;
+    }
+    if (showPhone !== undefined) {
+      user.profileVisibilityControls.showPhone = showPhone === 'true' || showPhone === true;
     }
 
     if (showNSFW !== undefined) {

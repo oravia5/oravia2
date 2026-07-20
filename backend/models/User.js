@@ -108,6 +108,10 @@ const userSchema = new mongoose.Schema(
         type: Boolean,
         default: true,
       },
+      showPhone: {
+        type: Boolean,
+        default: true,
+      },
     },
     blockedUsers: [
       {

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Edit3, LogOut, Settings, X, AlertCircle, MapPin, Link2, Calendar, Ban, Briefcase, User } from 'lucide-react';
+import { Camera, Edit3, LogOut, Settings, X, AlertCircle, MapPin, Link2, Calendar, Ban, Briefcase, User, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
@@ -282,6 +282,13 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
               <div className="profile-meta-item">
                 <User size={14} className="meta-icon" />
                 <span>{profile.gender}</span>
+              </div>
+            )}
+
+            {profile.phone && (isOwnProfile || (profile.profileVisibilityControls?.showPhone !== false)) && (
+              <div className="profile-meta-item">
+                <Phone size={14} className="meta-icon" />
+                <span>{profile.phone}</span>
               </div>
             )}
           </div>

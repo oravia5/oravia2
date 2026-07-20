@@ -17,6 +17,7 @@ export default function Settings() {
   const [showJoinedDate, setShowJoinedDate] = useState(true);
   const [showProfession, setShowProfession] = useState(true);
   const [showGender, setShowGender] = useState(true);
+  const [showPhone, setShowPhone] = useState(true);
   const [showNSFW, setShowNSFW] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -138,6 +139,7 @@ export default function Settings() {
             showJoinedDate: true,
             showProfession: true,
             showGender: true,
+            showPhone: true,
           };
           setShowWebsite(controls.showWebsite !== false);
           setShowLocation(controls.showLocation !== false);
@@ -145,6 +147,7 @@ export default function Settings() {
           setShowJoinedDate(controls.showJoinedDate !== false);
           setShowProfession(controls.showProfession !== false);
           setShowGender(controls.showGender !== false);
+          setShowPhone(controls.showPhone !== false);
           setShowNSFW(profile.showNSFW || false);
           setBlockedUsers(profile.blockedUsers || []);
         }
@@ -170,6 +173,7 @@ export default function Settings() {
       showJoinedDate: settingName === 'showJoinedDate' ? newValue : showJoinedDate,
       showProfession: settingName === 'showProfession' ? newValue : showProfession,
       showGender: settingName === 'showGender' ? newValue : showGender,
+      showPhone: settingName === 'showPhone' ? newValue : showPhone,
     };
 
     const formData = new FormData();
@@ -179,6 +183,7 @@ export default function Settings() {
     formData.append('showJoinedDate', updatedControls.showJoinedDate);
     formData.append('showProfession', updatedControls.showProfession);
     formData.append('showGender', updatedControls.showGender);
+    formData.append('showPhone', updatedControls.showPhone);
 
     try {
       const res = await client.put('/users/me', formData, {
@@ -354,6 +359,21 @@ export default function Settings() {
                       type="checkbox" 
                       checked={showGender} 
                       onChange={() => handleToggle('showGender', showGender, setShowGender)} 
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </div>
+
+                <div className="settings-row">
+                  <div className="row-info">
+                    <span className="row-label">Show Phone Number</span>
+                    <span className="row-desc">Display your phone number on your profile</span>
+                  </div>
+                  <label className="switch">
+                    <input 
+                      type="checkbox" 
+                      checked={showPhone} 
+                      onChange={() => handleToggle('showPhone', showPhone, setShowPhone)} 
                     />
                     <span className="slider"></span>
                   </label>

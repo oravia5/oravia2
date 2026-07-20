@@ -83,6 +83,7 @@ export default function EditProfile() {
   const [dob, setDob] = useState('');
   const [profession, setProfession] = useState('');
   const [gender, setGender] = useState('');
+  const [phone, setPhone] = useState('');
   const [showLocSuggestions, setShowLocSuggestions] = useState(false);
 
   // File uploads
@@ -145,6 +146,7 @@ export default function EditProfile() {
           setLocation(profile.location || '');
           setProfession(profile.profession || '');
           setGender(profile.gender || '');
+          setPhone(profile.phone || '');
           if (profile.dob) {
             setDob(new Date(profile.dob).toISOString().split('T')[0]);
           }
@@ -192,6 +194,7 @@ export default function EditProfile() {
     formData.append('dob', dob);
     formData.append('profession', profession.trim());
     formData.append('gender', gender);
+    formData.append('phone', phone.trim());
     
 
     if (selectedAvatar) {
@@ -413,6 +416,17 @@ export default function EditProfile() {
               <option value="Other" style={{ background: '#121214' }}>Other</option>
               <option value="Prefer not to say" style={{ background: '#121214' }}>Prefer not to say</option>
             </select>
+          </div>
+
+          <div className="form-group">
+            <label className="input-label">Phone Number</label>
+            <input
+              type="tel"
+              className="input-field"
+              placeholder="Enter phone number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
           </div>
 
 
