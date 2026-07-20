@@ -18,6 +18,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isArchivedState, setIsArchivedState] = useState(reel.isArchived || false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
   
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -379,15 +380,47 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
 
       {/* Details bottom overlay */}
       <div className="reel-bottom-info" onClick={(e) => e.stopPropagation()}>
-        <div className="reel-author-tag">
+        <Link 
+          to={`/profile/${reel.author?.username}`} 
+          className="reel-author-tag" 
+          style={{ textDecoration: 'none', color: '#fff', display: 'inline-flex', alignItems: 'center' }}
+        >
           <img 
             src={getFullMediaUrl(reel.author?.avatarUrl) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'} 
             alt={reel.author?.username} 
             className="author-avatar"
           />
           <span className="author-name">@{reel.author?.username}</span>
-        </div>
-        {reel.caption && <p className="reel-caption">{parseCaptionText(reel.caption)}</p>}
+        </Link>
+        {reel.caption && (
+          <div className="reel-caption-container">
+            {reel.caption.length > 80 && !isCaptionExpanded ? (
+              <p className="reel-caption">
+                {parseCaptionText(reel.caption.slice(0, 80) + '... ')}
+                <button 
+                  type="button"
+                  onClick={() => setIsCaptionExpanded(true)}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent-indigo)', fontWeight: 'bold', padding: 0, cursor: 'pointer', fontSize: '13px', marginLeft: '4px', display: 'inline-block' }}
+                >
+                  see more
+                </button>
+              </p>
+            ) : (
+              <p className="reel-caption">
+                {parseCaptionText(reel.caption)}
+                {reel.caption.length > 80 && (
+                  <button 
+                    type="button"
+                    onClick={() => setIsCaptionExpanded(false)}
+                    style={{ background: 'none', border: 'none', color: 'var(--accent-indigo)', fontWeight: 'bold', padding: 0, cursor: 'pointer', fontSize: '13px', marginLeft: '4px', display: 'inline-block' }}
+                  >
+                    see less
+                  </button>
+                )}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Floating Comments sheet */}
