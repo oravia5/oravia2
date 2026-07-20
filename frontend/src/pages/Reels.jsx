@@ -129,6 +129,9 @@ export default function Reels() {
               <ReelPlayer 
                 reel={reel} 
                 isActive={idx === activeIndex} 
+                onDelete={(deletedId) => {
+                  setReels(prev => prev.filter(r => r._id !== deletedId));
+                }}
               />
             </div>
           ))}

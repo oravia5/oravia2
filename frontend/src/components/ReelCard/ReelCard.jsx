@@ -1,19 +1,22 @@
 import React, { useState, useRef } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 
-export default function ReelCard({ reel }) {
+export default function ReelCard({ reel, onDeleteSuccess }) {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const videoRef = useRef(null);
 
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with posts');
+  const [showMenu, setShowMenu] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(reel.isArchived || false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -60,6 +63,47 @@ export default function ReelCard({ reel }) {
 
   const goToReelFeed = () => {
     navigate('/snips', { state: { activeId: reel._id } });
+  };
+
+  const handleArchiveToggle = async (e) => {
+    e.stopPropagation();
+    try {
+      setIsArchiving(true);
+      const action = isArchivedState ? 'unarchive' : 'archive';
+      const res = await client.post(`/posts/${reel._id}/${action}`);
+      if (res.data.success) {
+        setIsArchivedState(!isArchivedState);
+        if (onDeleteSuccess) {
+          onDeleteSuccess(reel._id);
+        }
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to archive snip');
+    } finally {
+      setIsArchiving(false);
+      setShowMenu(false);
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this snip?')) return;
+    try {
+      const res = await client.delete(`/posts/${reel._id}`);
+      if (res.data.success) {
+        if (onDeleteSuccess) onDeleteSuccess(reel._id);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete snip');
+    } finally {
+      setShowMenu(false);
+    }
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    navigate('/create-post', { state: { editPost: reel } });
   };
 
   const handleLike = async (e) => {
@@ -185,7 +229,7 @@ export default function ReelCard({ reel }) {
   return (
     <div className="reel-card animate-fade">
       {/* Header */}
-      <div className="reel-header">
+      <div className="reel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
         <Link to={`/profile/${reel.author?.username}`} className="author-link" onClick={(e) => e.stopPropagation()}>
           <img
             src={getFullMediaUrl(reel.author?.avatarUrl) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100'}
@@ -197,6 +241,54 @@ export default function ReelCard({ reel }) {
             <span className="author-username">@{reel.author?.username}</span>
           </div>
         </Link>
+
+        {isAuthor && (
+          <div className="reel-options-menu-wrapper" style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="three-dot-menu-btn" 
+              onClick={() => setShowMenu(!showMenu)} 
+              aria-label="Snip Options"
+              style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', padding: '4px' }}
+            >
+              <MoreHorizontal size={18} />
+            </button>
+            
+            {showMenu && (
+              <div className="reel-dropdown-menu" style={{
+                position: 'absolute',
+                right: 0,
+                top: '28px',
+                background: '#0e0e11',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                zIndex: 99,
+                minWidth: '130px',
+                overflow: 'hidden'
+              }}>
+                <button 
+                  onClick={handleEdit}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', color: '#fff', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  Edit Snip
+                </button>
+                <button 
+                  onClick={handleArchiveToggle}
+                  disabled={isArchiving}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', color: '#fff', fontSize: '13px', cursor: 'pointer', borderTop: '1px solid rgba(255, 255, 255, 0.04)' }}
+                >
+                  {isArchivedState ? 'Unarchive' : 'Archive'}
+                </button>
+                <button 
+                  onClick={handleDelete}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', borderTop: '1px solid rgba(255, 255, 255, 0.04)', fontWeight: '600' }}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Media Block */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
-import { Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreHorizontal } from 'lucide-react';
 import { queueView } from '../../utils/viewTracker';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
@@ -9,11 +9,15 @@ import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import LikesSheet from '../LikesSheet/LikesSheet';
 
-export default React.memo(function ReelPlayer({ reel, isActive }) {
+export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with snips');
+  const [showMenu, setShowMenu] = useState(false);
+  const [isArchivedState, setIsArchivedState] = useState(reel.isArchived || false);
+  const [isArchiving, setIsArchiving] = useState(false);
   
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -76,6 +80,10 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
   }, [isActive]);
 
   const handleVideoClick = () => {
+    if (showMenu) {
+      setShowMenu(false);
+      return;
+    }
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
@@ -84,6 +92,45 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
       videoRef.current.play();
       setIsPlaying(true);
     }
+  };
+
+  const handleArchiveToggle = async (e) => {
+    e.stopPropagation();
+    try {
+      setIsArchiving(true);
+      const action = isArchivedState ? 'unarchive' : 'archive';
+      const res = await client.post(`/posts/${reel._id}/${action}`);
+      if (res.data.success) {
+        setIsArchivedState(!isArchivedState);
+        if (onDelete) onDelete(reel._id);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to archive snip');
+    } finally {
+      setIsArchiving(false);
+      setShowMenu(false);
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this snip?')) return;
+    try {
+      const res = await client.delete(`/posts/${reel._id}`);
+      if (res.data.success) {
+        if (onDelete) onDelete(reel._id);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete snip');
+    } finally {
+      setShowMenu(false);
+    }
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    navigate('/create-post', { state: { editPost: reel } });
   };
 
   const handleLike = async (e) => {
@@ -282,6 +329,52 @@ export default React.memo(function ReelPlayer({ reel, isActive }) {
         <button className={`sidebar-btn ${isSaved ? 'saved' : ''}`} onClick={handleSave} aria-label="Save">
           <Bookmark size={26} fill={isSaved ? 'currentColor' : 'none'} />
         </button>
+
+        {isAuthenticated && user?._id === reel.author?._id && (
+          <div className="sidebar-btn-wrapper" style={{ position: 'relative' }}>
+            <button 
+              className="sidebar-btn" 
+              onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
+              aria-label="Snip Options"
+            >
+              <MoreHorizontal size={26} />
+            </button>
+            {showMenu && (
+              <div className="reel-dropdown-menu" style={{
+                position: 'absolute',
+                right: '48px',
+                bottom: '0px',
+                background: '#0e0e11',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '10px',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                zIndex: 99,
+                minWidth: '130px',
+                overflow: 'hidden'
+              }}>
+                <button 
+                  onClick={handleEdit}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', color: '#fff', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  Edit Snip
+                </button>
+                <button 
+                  onClick={handleArchiveToggle}
+                  disabled={isArchiving}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', color: '#fff', fontSize: '13px', cursor: 'pointer', borderTop: '1px solid rgba(255, 255, 255, 0.04)' }}
+                >
+                  {isArchivedState ? 'Unarchive' : 'Archive'}
+                </button>
+                <button 
+                  onClick={handleDelete}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', borderTop: '1px solid rgba(255, 255, 255, 0.04)', fontWeight: '600' }}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Details bottom overlay */}

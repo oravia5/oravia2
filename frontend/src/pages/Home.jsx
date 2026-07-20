@@ -329,7 +329,7 @@ export default function Home() {
 
             {displayFeed.map((item) => {
               if (item.type === 'reel') {
-                return <ReelCard key={item._id} reel={item} />;
+                return <ReelCard key={item._id} reel={item} onDeleteSuccess={handleDeletePost} />;
               }
               return (
                 <PostCard 
