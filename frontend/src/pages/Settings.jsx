@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Eye, EyeOff, Shield, LogOut, CheckCircle2, User, HelpCircle, Lock,
-  FolderHeart, Bookmark, Archive, FileText, Download, ShoppingBag, Loader2
+  FolderHeart, Bookmark, Archive, FileText, Download, ShoppingBag, Loader2, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
@@ -38,6 +38,7 @@ export default function Settings() {
   // Username edit states
   const [username, setUsername] = useState(user?.username || '');
   const [usernameSaving, setUsernameSaving] = useState(false);
+  const [isCredentialsExpanded, setIsCredentialsExpanded] = useState(false);
 
   useEffect(() => {
     if (user?.username) {
@@ -445,75 +446,90 @@ export default function Settings() {
                 <Lock size={18} className="section-icon text-indigo" />
                 <h3 className="section-title">Account Credentials</h3>
               </div>
-              <p className="section-desc">Manage your email, username, and password.</p>
 
-              <div className="settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', color: '#a1a1aa', fontWeight: '500' }}>Email Address (Display Only)</label>
-                  <input
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: '#71717a',
-                      fontSize: '14px',
-                      cursor: 'not-allowed',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', color: '#a1a1aa', fontWeight: '500' }}>Username</label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter username"
-                      style={{
-                        flex: 1,
-                        padding: '12px',
-                        borderRadius: '8px',
-                        background: '#111',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        color: '#fff',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    <button
-                      onClick={handleUsernameSave}
-                      disabled={username.toLowerCase() === user?.username?.toLowerCase() || usernameSaving}
-                      style={{
-                        padding: '0 16px',
-                        borderRadius: '8px',
-                        background: 'var(--accent-indigo)',
-                        color: '#000',
-                        border: 'none',
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        opacity: (username.toLowerCase() === user?.username?.toLowerCase() || usernameSaving) ? 0.5 : 1
-                      }}
-                    >
-                      {usernameSaving ? 'Saving...' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="settings-row clickable" onClick={() => setShowPasswordModal(true)} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '12px', paddingTop: '16px', paddingLeft: 0, paddingRight: 0 }}>
+              <div className="settings-card" style={{ padding: '16px 20px' }}>
+                <div 
+                  className="settings-row clickable" 
+                  onClick={() => setIsCredentialsExpanded(!isCredentialsExpanded)}
+                  style={{ padding: '4px 0', borderBottom: isCredentialsExpanded ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingBottom: isCredentialsExpanded ? '16px' : '4px' }}
+                >
                   <div className="row-info">
-                    <span className="row-label">Change Password</span>
-                    <span className="row-desc">Keep your account secure with a new password</span>
+                    <span className="row-label">Manage Credentials</span>
+                    <span className="row-desc">View email, change username and password</span>
                   </div>
-                  <Lock size={16} className="arrow-indicator" />
+                  <ChevronDown size={18} style={{ transform: isCredentialsExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: '#71717a', cursor: 'pointer' }} />
                 </div>
+
+                {isCredentialsExpanded && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: '#a1a1aa', fontWeight: '500' }}>Email Address (Display Only)</label>
+                      <input
+                        type="email"
+                        value={user?.email || ''}
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          borderRadius: '8px',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          color: '#71717a',
+                          fontSize: '14px',
+                          cursor: 'not-allowed',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: '#a1a1aa', fontWeight: '500' }}>Username</label>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="Enter username"
+                          style={{
+                            flex: 1,
+                            padding: '12px',
+                            borderRadius: '8px',
+                            background: '#111',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: '#fff',
+                            fontSize: '14px',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          onClick={handleUsernameSave}
+                          disabled={username.toLowerCase() === user?.username?.toLowerCase() || usernameSaving}
+                          style={{
+                            padding: '0 16px',
+                            borderRadius: '8px',
+                            background: 'var(--accent-indigo)',
+                            color: '#000',
+                            border: 'none',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            opacity: (username.toLowerCase() === user?.username?.toLowerCase() || usernameSaving) ? 0.5 : 1
+                          }}
+                        >
+                          {usernameSaving ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="settings-row clickable" onClick={() => setShowPasswordModal(true)} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '12px', paddingTop: '16px', paddingLeft: 0, paddingRight: 0 }}>
+                      <div className="row-info">
+                        <span className="row-label">Change Password</span>
+                        <span className="row-desc">Keep your account secure with a new password</span>
+                      </div>
+                      <Lock size={16} className="arrow-indicator" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
