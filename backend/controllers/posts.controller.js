@@ -43,6 +43,7 @@ export const getFeed = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
       query.isNSFW = { $ne: true };
+      query.moderationStatus = { $ne: 'pending' };
     }
 
     if (cursor) {
@@ -126,6 +127,7 @@ export const getFollowingFeed = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
       query.isNSFW = { $ne: true };
+      query.moderationStatus = { $ne: 'pending' };
     }
 
     const posts = await Post.find(query)
@@ -259,6 +261,7 @@ export const getNearYouFeed = async (req, res) => {
       const showNSFW = req.user ? req.user.showNSFW : false;
       if (!showNSFW) {
         query.isNSFW = { $ne: true };
+        query.moderationStatus = { $ne: 'pending' };
       }
 
       if (cursor) {
@@ -976,6 +979,7 @@ export const getPosts = async (req, res) => {
     const isOwnProfile = req.user && author && req.user._id.toString() === author.toString();
     if (!showNSFW && !isOwnProfile) {
       query.isNSFW = { $ne: true };
+      query.moderationStatus = { $ne: 'pending' };
     }
 
     const posts = await Post.find(query)
@@ -1007,6 +1011,7 @@ export const getPostsByHashtag = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
       query.isNSFW = { $ne: true };
+      query.moderationStatus = { $ne: 'pending' };
     }
 
     const posts = await Post.find(query)
@@ -1038,6 +1043,7 @@ export const getPostsByLocation = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
       query.isNSFW = { $ne: true };
+      query.moderationStatus = { $ne: 'pending' };
     }
 
     const posts = await Post.find(query)
@@ -1083,6 +1089,7 @@ export const searchPosts = async (req, res) => {
     };
     if (!showNSFW) {
       postQuery.isNSFW = { $ne: true };
+      postQuery.moderationStatus = { $ne: 'pending' };
     }
 
     const matchingPosts = await Post.find(postQuery)
@@ -1095,6 +1102,7 @@ export const searchPosts = async (req, res) => {
     };
     if (!showNSFW) {
       tagsQuery.isNSFW = { $ne: true };
+      tagsQuery.moderationStatus = { $ne: 'pending' };
     }
 
     const postsWithTags = await Post.find(tagsQuery);

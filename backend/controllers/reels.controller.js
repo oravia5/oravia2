@@ -22,6 +22,7 @@ export const getReels = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
       query.isNSFW = { $ne: true };
+      query.moderationStatus = { $ne: 'pending' };
     }
 
     if (req.user) {

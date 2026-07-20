@@ -18,7 +18,9 @@ router.post('/update-moderation', async (req, res) => {
       {
         $or: [
           { mediaUrl: { $regex: fileKey, $options: 'i' } },
+          { thumbnailUrl: { $regex: fileKey, $options: 'i' } },
           { 'mediaItems.url': { $regex: fileKey, $options: 'i' } },
+          { 'mediaItems.thumbnailUrl': { $regex: fileKey, $options: 'i' } },
         ],
       },
       { isNSFW, moderationStatus: 'completed' },
