@@ -60,25 +60,24 @@ export const registerUser = async (req, res) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-    // Delete any old registration OTPs for this email
-    await OTP.deleteOne({ email: email.toLowerCase(), purpose: 'register' });
-
-    // 4. Store OTP in database along with the registration details
-    await OTP.create({
-      email: email.toLowerCase(),
-      code: otpCode,
-      purpose: 'register',
-      expiresAt,
-      registrationData: {
-        username: username.toLowerCase(),
-        email: email.toLowerCase(),
-        phone,
-        passwordHash: password, // will be hashed by User's pre-save hook on creation
-        displayName: displayName || username,
-        bio: bio || '',
-        showNSFW: showNSFW === 'true' || showNSFW === true,
-      }
-    });
+    // 4. Atomic update-or-insert (upsert) OTP registration data to avoid race conditions
+    await OTP.findOneAndUpdate(
+      { email: email.toLowerCase(), purpose: 'register' },
+      {
+        code: otpCode,
+        expiresAt,
+        registrationData: {
+          username: username.toLowerCase(),
+          email: email.toLowerCase(),
+          phone,
+          passwordHash: password,
+          displayName: displayName || username,
+          bio: bio || '',
+          showNSFW: showNSFW === 'true' || showNSFW === true,
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     // 5. Send OTP to user's email via Nodemailer
     const emailSent = await sendOTPEmail(email.toLowerCase(), otpCode, 'register');
@@ -124,8 +123,9 @@ export const verifyRegisterOTP = async (req, res) => {
       });
     }
 
-    // 1. Find the active OTP document in database
-    const otp = await OTP.findOne({
+    // 1. Find and DELETE the active OTP document atomically.
+    // This makes sure no two concurrent requests can verify the same code.
+    const otp = await OTP.findOneAndDelete({
       email: email.toLowerCase(),
       code: code.trim(),
       purpose: 'register',
@@ -147,7 +147,6 @@ export const verifyRegisterOTP = async (req, res) => {
     });
 
     if (userExists) {
-      await otp.deleteOne();
       return res.status(400).json({
         success: false,
         message: 'Username or email has already been registered',
@@ -170,9 +169,6 @@ export const verifyRegisterOTP = async (req, res) => {
       showNSFW: reg.showNSFW || false,
     });
 
-    // 4. Delete the verified OTP
-    await otp.deleteOne();
-
     res.status(200).json({
       success: true,
       message: 'Email verified and account activated successfully!',
@@ -191,6 +187,13 @@ export const verifyRegisterOTP = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    // 4. Handle Mongoose duplicate key errors during concurrent writes
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username or email has already been registered',
+      });
+    }
     res.status(500).json({
       success: false,
       message: 'Server error during OTP verification',
