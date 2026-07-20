@@ -15,6 +15,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNSFW, setShowNSFW] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -71,6 +72,7 @@ export default function Register() {
       phone: phone.trim(),
       password,
       displayName: displayName.trim() || username.trim(),
+      showNSFW,
     };
 
     const res = await register(payload);
@@ -220,6 +222,20 @@ export default function Register() {
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+          </div>
+
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', marginBottom: '16px' }}>
+            <input
+              id="showNSFW"
+              type="checkbox"
+              checked={showNSFW}
+              onChange={(e) => setShowNSFW(e.target.checked)}
+              disabled={loading}
+              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#ffffff', backgroundColor: '#111', border: '1px solid #333', borderRadius: '4px' }}
+            />
+            <label className="auth-label" style={{ margin: 0, cursor: 'pointer', userSelect: 'none', fontSize: '13px', color: '#a1a1aa' }} htmlFor="showNSFW">
+              Show NSFW / Mature Content (18+)
+            </label>
           </div>
 
           <button type="submit" className="btn-primary auth-submit-btn" disabled={loading}>

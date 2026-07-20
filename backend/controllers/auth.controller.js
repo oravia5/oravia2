@@ -18,7 +18,7 @@ const generateToken = (id) => {
  */
 export const registerUser = async (req, res) => {
   try {
-    const { username, email, password, phone, displayName, bio } = req.body;
+    const { username, email, password, phone, displayName, bio, showNSFW } = req.body;
 
     if (!username || !email || !password || !phone) {
       return res.status(400).json({
@@ -59,6 +59,7 @@ export const registerUser = async (req, res) => {
       bio: bio || '',
       avatarUrl,
       isVerified: false, // Explicitly unverified until OTP check
+      showNSFW: showNSFW === 'true' || showNSFW === true,
     });
 
     // 4. Generate 6-digit OTP code
@@ -162,6 +163,7 @@ export const verifyRegisterOTP = async (req, res) => {
         avatarUrl: user.avatarUrl,
         role: user.role || 'user',
         isBanned: user.isBanned || false,
+        showNSFW: user.showNSFW || false,
         token: generateToken(user._id),
       },
     });
@@ -243,6 +245,7 @@ export const loginUser = async (req, res) => {
           avatarUrl: user.avatarUrl,
           role: user.role || 'user',
           isBanned: user.isBanned || false,
+          showNSFW: user.showNSFW || false,
           token: generateToken(user._id),
         },
       });

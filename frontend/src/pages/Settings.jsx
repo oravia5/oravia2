@@ -17,6 +17,7 @@ export default function Settings() {
   const [showJoinedDate, setShowJoinedDate] = useState(true);
   const [showProfession, setShowProfession] = useState(true);
   const [showGender, setShowGender] = useState(true);
+  const [showNSFW, setShowNSFW] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,6 +105,7 @@ export default function Settings() {
           setShowJoinedDate(controls.showJoinedDate !== false);
           setShowProfession(controls.showProfession !== false);
           setShowGender(controls.showGender !== false);
+          setShowNSFW(profile.showNSFW || false);
           setBlockedUsers(profile.blockedUsers || []);
         }
       } catch (err) {
@@ -153,6 +155,35 @@ export default function Settings() {
       console.error('Error saving settings:', err);
       setSaveStatus('error');
       setter(currentValue); // Rollback state on error
+      setTimeout(() => setSaveStatus(''), 2000);
+    }
+  };
+
+  const handleNSFWToggle = async () => {
+    const newValue = !showNSFW;
+    setShowNSFW(newValue);
+    setSaveStatus('saving');
+
+    const formData = new FormData();
+    formData.append('showNSFW', newValue);
+
+    try {
+      const res = await client.put('/users/me', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success) {
+        updateUserData(res.data.data);
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus(''), 1500);
+      } else {
+        setSaveStatus('error');
+        setShowNSFW(showNSFW); // Rollback
+        setTimeout(() => setSaveStatus(''), 2000);
+      }
+    } catch (err) {
+      console.error('Error saving NSFW setting:', err);
+      setSaveStatus('error');
+      setShowNSFW(showNSFW); // Rollback
       setTimeout(() => setSaveStatus(''), 2000);
     }
   };
@@ -307,6 +338,21 @@ export default function Settings() {
                   <span style={{ fontSize: '12.5px', color: '#71717a', fontWeight: '600' }}>
                     {blockedUsers.length} blocked
                   </span>
+                </div>
+
+                <div className="settings-row">
+                  <div className="row-info">
+                    <span className="row-label">Show NSFW Content (18+)</span>
+                    <span className="row-desc">Show or hide adult/mature content on your timeline</span>
+                  </div>
+                  <label className="switch">
+                    <input 
+                      type="checkbox" 
+                      checked={showNSFW} 
+                      onChange={handleNSFWToggle} 
+                    />
+                    <span className="slider"></span>
+                  </label>
                 </div>
               </div>
             </div>

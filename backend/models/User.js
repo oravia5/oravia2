@@ -135,6 +135,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    showNSFW: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

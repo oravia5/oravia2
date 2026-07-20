@@ -19,6 +19,11 @@ export const getReels = async (req, res) => {
       status: { $ne: 'draft' },
     };
 
+    const showNSFW = req.user ? req.user.showNSFW : false;
+    if (!showNSFW) {
+      query.isNSFW = { $ne: true };
+    }
+
     if (req.user) {
       const currentUser = await User.findById(req.user._id);
       if (currentUser) {

@@ -39,6 +39,12 @@ export const getFeed = async (req, res) => {
     if (allBlockedIds.length > 0) {
       query.author = { $nin: allBlockedIds };
     }
+
+    const showNSFW = req.user ? req.user.showNSFW : false;
+    if (!showNSFW) {
+      query.isNSFW = { $ne: true };
+    }
+
     if (cursor) {
       query.createdAt = { $lt: new Date(cursor) };
     }
@@ -111,11 +117,18 @@ export const getFollowingFeed = async (req, res) => {
     const allowedAuthors = [userId, ...followedUsers].filter(id => !allBlockedIds.includes(id.toString()));
 
     // Fetch posts from these authors
-    const posts = await Post.find({
+    const query = {
       author: { $in: allowedAuthors },
       isArchived: { $ne: true },
       status: { $ne: 'draft' },
-    })
+    };
+
+    const showNSFW = req.user ? req.user.showNSFW : false;
+    if (!showNSFW) {
+      query.isNSFW = { $ne: true };
+    }
+
+    const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .populate('author', '_id username displayName avatarUrl');
 
@@ -242,6 +255,12 @@ export const getNearYouFeed = async (req, res) => {
       if (allBlockedIds.length > 0) {
         query.author.$nin = allBlockedIds;
       }
+
+      const showNSFW = req.user ? req.user.showNSFW : false;
+      if (!showNSFW) {
+        query.isNSFW = { $ne: true };
+      }
+
       if (cursor) {
         query.createdAt = { $lt: new Date(cursor) };
       }
@@ -953,6 +972,12 @@ export const getPosts = async (req, res) => {
       query.status = { $ne: 'draft' };
     }
 
+    const showNSFW = req.user ? req.user.showNSFW : false;
+    const isOwnProfile = req.user && author && req.user._id.toString() === author.toString();
+    if (!showNSFW && !isOwnProfile) {
+      query.isNSFW = { $ne: true };
+    }
+
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .populate('author', '_id username displayName avatarUrl');
@@ -978,7 +1003,13 @@ export const getPosts = async (req, res) => {
 export const getPostsByHashtag = async (req, res) => {
   try {
     const tag = req.params.tag.toLowerCase().trim();
-    const posts = await Post.find({ tags: tag })
+    const query = { tags: tag };
+    const showNSFW = req.user ? req.user.showNSFW : false;
+    if (!showNSFW) {
+      query.isNSFW = { $ne: true };
+    }
+
+    const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .populate('author', '_id username displayName avatarUrl');
 
@@ -1003,7 +1034,13 @@ export const getPostsByHashtag = async (req, res) => {
 export const getPostsByLocation = async (req, res) => {
   try {
     const locationName = req.params.location.trim();
-    const posts = await Post.find({ location: { $regex: new RegExp(`^${locationName}$`, 'i') } })
+    const query = { location: { $regex: new RegExp(`^${locationName}$`, 'i') } };
+    const showNSFW = req.user ? req.user.showNSFW : false;
+    if (!showNSFW) {
+      query.isNSFW = { $ne: true };
+    }
+
+    const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .populate('author', '_id username displayName avatarUrl');
 
@@ -1034,21 +1071,33 @@ export const searchPosts = async (req, res) => {
 
     const escapedQuery = escapeRegex(query);
 
+    const showNSFW = req.user ? req.user.showNSFW : false;
+
     // 1. Search posts matching caption or location string
-    const matchingPosts = await Post.find({
+    const postQuery = {
       $or: [
         { caption: { $regex: escapedQuery, $options: 'i' } },
         { location: { $regex: escapedQuery, $options: 'i' } },
       ],
       type: { $ne: 'reel' }
-    })
+    };
+    if (!showNSFW) {
+      postQuery.isNSFW = { $ne: true };
+    }
+
+    const matchingPosts = await Post.find(postQuery)
       .sort({ createdAt: -1 })
       .populate('author', '_id username displayName avatarUrl');
-
+  
     // 2. Search unique hashtags matching the keyword query
-    const postsWithTags = await Post.find({
+    const tagsQuery = {
       tags: { $regex: escapedQuery, $options: 'i' }
-    });
+    };
+    if (!showNSFW) {
+      tagsQuery.isNSFW = { $ne: true };
+    }
+
+    const postsWithTags = await Post.find(tagsQuery);
 
     const tagMap = {};
     postsWithTags.forEach((post) => {

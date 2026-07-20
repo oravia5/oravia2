@@ -144,7 +144,8 @@ export const updateProfile = async (req, res) => {
       showJoinedDate,
       showDob,
       showProfession,
-      showGender
+      showGender,
+      showNSFW
     } = req.body;
 
     if (displayName !== undefined) user.displayName = displayName;
@@ -183,6 +184,10 @@ export const updateProfile = async (req, res) => {
     }
     if (showGender !== undefined) {
       user.profileVisibilityControls.showGender = showGender === 'true' || showGender === true;
+    }
+
+    if (showNSFW !== undefined) {
+      user.showNSFW = showNSFW === 'true' || showNSFW === true;
     }
 
     // Handle profile avatar and cover updates
@@ -225,6 +230,7 @@ export const updateProfile = async (req, res) => {
         dob: updatedUser.dob || null,
         profession: updatedUser.profession || '',
         gender: updatedUser.gender || '',
+        showNSFW: updatedUser.showNSFW || false,
         createdAt: updatedUser.createdAt,
         profileVisibilityControls: updatedUser.profileVisibilityControls || {
           showWebsite: true,
