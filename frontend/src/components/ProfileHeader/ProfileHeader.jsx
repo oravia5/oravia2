@@ -12,17 +12,25 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
   // Determine if viewing user is already followed
   const [isFollowing, setIsFollowing] = useState(profile.isFollowing || false);
   const [followerCount, setFollowerCount] = useState(profile.followerCount || 0);
+  const [followLoading, setFollowLoading] = useState(false);
   const coverInputRef = useRef(null);
 
 
 
-  // Sync local state when profile data changes (e.g., after refetch)
+  // Sync local state ONLY when we're now looking at a different profile
+  // (not on every profile object mutation). Previously this re-ran on
+  // every profile update — including the one triggered by our own follow
+  // click — which could race with the click and snap the button back to
+  // "Follow" even though the follow had already succeeded.
   useEffect(() => {
     setIsFollowing(profile.isFollowing || false);
     setFollowerCount(profile.followerCount || 0);
-  }, [profile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile._id]);
 
   const handleFollowToggle = async () => {
+    if (followLoading) return;
+    setFollowLoading(true);
     const wasFollowing = isFollowing;
     const prevCount = followerCount;
     const newFollowing = !isFollowing;
@@ -42,7 +50,6 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
       }
 
       await client.post(endpoint);
-      if (refetchProfile) await refetchProfile();
     } catch (err) {
       setIsFollowing(wasFollowing);
       setFollowerCount(prevCount);
@@ -59,6 +66,8 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
       if (msg !== 'You are already following this user' && msg !== 'You are not following this user') {
         alert(msg);
       }
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -199,6 +208,8 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
                     <button 
                       className={`follow-btn ${isFollowing ? 'following-active' : 'follow-inactive'}`} 
                       onClick={handleFollowToggle}
+                      disabled={followLoading}
+                      style={followLoading ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
                     >
                       {isFollowing ? 'Following' : 'Follow'}
                     </button>

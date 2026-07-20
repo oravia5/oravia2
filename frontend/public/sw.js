@@ -1,5 +1,5 @@
-const CACHE_NAME = 'oravia-static-v1';
-const API_CACHE_NAME = 'oravia-api-v1';
+const CACHE_NAME = 'oravia-static-v3';
+const API_CACHE_NAME = 'oravia-api-v2';
 
 // Static files to cache immediately on installation
 const STATIC_ASSETS = [
@@ -70,6 +70,15 @@ self.addEventListener('fetch', (event) => {
           return caches.match(event.request);
         })
     );
+    return;
+  }
+
+  // Any other /api/ request (users, follow/unfollow, notifications, comments,
+  // messages, etc.) is dynamic/personalized data. Never cache-first these —
+  // that was causing stale data (e.g. Follow button needing two clicks
+  // because the refetch after following was served from a stale cache).
+  // Let the browser handle these directly, network-only.
+  if (requestUrl.pathname.includes('/api/')) {
     return;
   }
 

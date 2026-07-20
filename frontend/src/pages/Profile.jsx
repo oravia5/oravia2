@@ -74,6 +74,28 @@ export default function Profile() {
     setSelectedAlbum(null);
   }, [username, targetUsername]);
 
+  // No setInterval / polling here (avoids extra server load with many
+  // concurrent users). Refetch only fires when the user actually returns
+  // to this profile tab/page — e.g. after navigating away and back, or
+  // switching apps — so things like Follow/Following state stay accurate
+  // without needing a manual reload.
+  useEffect(() => {
+    const silentRefresh = () => {
+      fetchProfileData({ showLoader: false });
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') silentRefresh();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', silentRefresh);
+    window.addEventListener('pageshow', silentRefresh);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', silentRefresh);
+      window.removeEventListener('pageshow', silentRefresh);
+    };
+  }, [targetUsername]);
+
   // Removed wishlist useEffect hook (moved to standalone settings subpages)
 
   const handleProfileUpdate = (updatedProfile) => {

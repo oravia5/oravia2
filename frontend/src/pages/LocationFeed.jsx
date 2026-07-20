@@ -109,7 +109,7 @@ export default function LocationFeed() {
                   <div 
                     key={post._id} 
                     className="grid-post-card" 
-                    onClick={() => navigate(`/post/${post._id}`)}
+                    onClick={() => navigate(`/post/${post._id}`, { state: { posts, scrollToId: post._id } })}
                   >
                     {post.type === 'video' || post.type === 'reel' ? (
                       <video src={getFullMediaUrl(post.mediaUrl)} className="grid-media" muted playsInline />

@@ -90,6 +90,27 @@ export default function Notifications() {
     loadNotificationsData();
   }, []);
 
+  // No setInterval / polling loop here on purpose (avoids extra server load
+  // with many concurrent users). Refetch only fires when the user actually
+  // returns to this tab/page — one lightweight request per return.
+  useEffect(() => {
+    const silentPoll = async () => {
+      const data = await fetchNotifications(1);
+      if (data && data.notifications) {
+        await syncFollowMap(data.notifications);
+      }
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') silentPoll();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', silentPoll);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', silentPoll);
+    };
+  }, [fetchNotifications, syncFollowMap]);
+
   const handleNotificationClick = async (n) => {
     if (!n.read) {
       await markAsRead(n._id);

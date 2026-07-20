@@ -225,13 +225,22 @@ export const getNearYouFeed = async (req, res) => {
     let nextCursor = null;
 
     if (citySearch) {
+      // Find all users whose PROFILE location matches the current user's
+      // city (this is the actual "Near You" logic — same city profile,
+      // regardless of whether individual posts have a location tag).
+      const matchingUsers = await User.find(
+        { location: { $regex: citySearch, $options: 'i' } },
+        '_id'
+      );
+      const matchingAuthorIds = matchingUsers.map((u) => u._id.toString());
+
       const query = {
         isArchived: { $ne: true },
         status: { $ne: 'draft' },
-        location: { $regex: citySearch, $options: 'i' },
+        author: { $in: matchingAuthorIds },
       };
       if (allBlockedIds.length > 0) {
-        query.author = { $nin: allBlockedIds };
+        query.author.$nin = allBlockedIds;
       }
       if (cursor) {
         query.createdAt = { $lt: new Date(cursor) };

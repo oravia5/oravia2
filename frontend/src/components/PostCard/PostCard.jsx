@@ -138,6 +138,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
   
   const [currentCaption, setCurrentCaption] = useState(post.caption || '');
+  const [expandedCaption, setExpandedCaption] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(post.location || '');
   const [isArchivedState, setIsArchivedState] = useState(post.isArchived || false);
   const [showMenu, setShowMenu] = useState(false);
@@ -916,14 +917,31 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
       {/* Content */}
       <div className="post-body">
-        {currentCaption && (
-          <p className="post-caption">
-            <Link to={`/profile/${post.author?.username}`} className="caption-username">
-              {post.author?.username}
-            </Link>{' '}
-            {parseCaptionText(currentCaption)}
-          </p>
-        )}
+        {currentCaption && (() => {
+          const CAPTION_LIMIT = 200;
+          const isLongCaption = currentCaption.length > CAPTION_LIMIT;
+          const displayCaption = isLongCaption && !expandedCaption
+            ? currentCaption.slice(0, CAPTION_LIMIT).trimEnd()
+            : currentCaption;
+
+          return (
+            <p className="post-caption">
+              <Link to={`/profile/${post.author?.username}`} className="caption-username">
+                {post.author?.username}
+              </Link>{' '}
+              {parseCaptionText(displayCaption)}
+              {isLongCaption && !expandedCaption && '... '}
+              {isLongCaption && (
+                <span
+                  onClick={() => setExpandedCaption(!expandedCaption)}
+                  style={{ color: 'var(--text-muted)', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  {expandedCaption ? ' Show less' : 'See more'}
+                </span>
+              )}
+            </p>
+          );
+        })()}
         <span className="post-time">{formatTime(post.createdAt)}</span>
       </div>
 
@@ -1210,6 +1228,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
         .post-caption {
           font-size: 14px;
           margin-bottom: 6px;
+          white-space: pre-wrap;
+          word-break: break-word;
         }
 
         .caption-username {

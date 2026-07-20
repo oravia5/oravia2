@@ -10,6 +10,7 @@ export default function HashtagFeed() {
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState([]);
+  const [circleImage, setCircleImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -21,6 +22,18 @@ export default function HashtagFeed() {
       const res = await client.get(`/posts/tag/${tag}`);
       if (res.data.success) {
         setPosts(res.data.data);
+
+        // Pick a random post's image for the header circle — changes on
+        // every visit. Photos use mediaUrl directly; videos/reels use their
+        // thumbnailUrl (mediaUrl there is a video file, not an image).
+        const candidates = res.data.data
+          .map((p) => (p.type === 'photo' ? p.mediaUrl : p.thumbnailUrl))
+          .filter(Boolean);
+        setCircleImage(
+          candidates.length > 0
+            ? candidates[Math.floor(Math.random() * candidates.length)]
+            : null
+        );
       }
     } catch (err) {
       console.error(err);
@@ -62,7 +75,17 @@ export default function HashtagFeed() {
           <div className="tag-container">
             {/* Top Stat Banner */}
             <div className="tag-banner-card">
-              <div className="tag-icon-circle">#</div>
+              <div className="tag-icon-circle">
+                {circleImage ? (
+                  <img
+                    src={getFullMediaUrl(circleImage)}
+                    alt={`#${tag}`}
+                    className="tag-icon-circle-img"
+                  />
+                ) : (
+                  '#'
+                )}
+              </div>
               <div className="tag-meta-info">
                 <h2>#{tag}</h2>
                 <p className="posts-count-label">
@@ -104,7 +127,7 @@ export default function HashtagFeed() {
                   <div 
                     key={post._id} 
                     className="grid-post-card" 
-                    onClick={() => navigate(`/post/${post._id}`)}
+                    onClick={() => navigate(`/post/${post._id}`, { state: { posts, scrollToId: post._id } })}
                   >
                     {post.type === 'video' || post.type === 'reel' ? (
                       <video src={getFullMediaUrl(post.mediaUrl)} className="grid-media" muted playsInline />
@@ -228,6 +251,13 @@ export default function HashtagFeed() {
           justify-content: center;
           color: var(--accent-indigo);
           box-shadow: 0 8px 24px rgba(255, 143, 0, 0.15);
+          overflow: hidden;
+        }
+
+        .tag-icon-circle-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
 
         .tag-meta-info h2 {

@@ -19,6 +19,8 @@ export default function PostDetail() {
   const [hasScrolled, setHasScrolled] = useState(false);
   
   const postRefs = useRef({});
+  const postsRef = useRef(posts);
+  postsRef.current = posts;
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -59,8 +61,50 @@ export default function PostDetail() {
     }
   };
 
+  // Silent refresh: updates likes/dislikes/comments/views without showing
+  // the loading spinner or disturbing scroll position. No polling loop —
+  // this only fires when the user actually comes back to the tab/page,
+  // so it adds no continuous server load.
+  const silentRefresh = async () => {
+    const currentPosts = postsRef.current;
+    if (!currentPosts || currentPosts.length === 0) return;
+    try {
+      const authorId = currentPosts[0]?.author?._id;
+      if (authorId) {
+        const feedRes = await client.get(`/posts?author=${authorId}`);
+        if (feedRes.data.success && feedRes.data.data.length > 0) {
+          setPosts(feedRes.data.data);
+          return;
+        }
+      }
+      const res = await client.get(`/posts/${id}`);
+      if (res.data.success) {
+        setPosts((prev) =>
+          prev.map((p) => (p._id === res.data.data._id ? res.data.data : p))
+        );
+      }
+    } catch (err) {
+      // Silent fail — keep showing last known data
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
+  }, [id]);
+
+  // No setInterval / polling here on purpose (avoids extra load with many
+  // concurrent users). Instead, refetch only when the user returns to this
+  // tab/app — a single lightweight request per return, not a background loop.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') silentRefresh();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', silentRefresh);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', silentRefresh);
+    };
   }, [id]);
 
   // Scroll to the clicked post once posts are loaded

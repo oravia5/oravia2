@@ -92,6 +92,23 @@ const postSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // A fixed random number assigned once at creation. Sorting by this
+    // instead of createdAt gives a shuffled feed order that stays stable
+    // across pagination (no duplicates/skips while scrolling).
+    isNSFW: {
+      type: Boolean,
+      default: null,
+    },
+    moderationStatus: {
+      type: String,
+      enum: ['pending', 'completed'],
+      default: 'pending',
+    },
+    randomOrder: {
+      type: Number,
+      default: () => Math.random(),
+      index: true,
+    },
   },
   {
     timestamps: true,

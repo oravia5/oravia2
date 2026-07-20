@@ -31,11 +31,11 @@ export const getReels = async (req, res) => {
     }
 
     if (cursor) {
-      query.createdAt = { $lt: new Date(cursor) };
+      query.randomOrder = { $gt: parseFloat(cursor) };
     }
 
     const reels = await Post.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ randomOrder: 1 })
       .limit(limit + 1)
       .populate('author', '_id username displayName avatarUrl');
 
@@ -44,7 +44,7 @@ export const getReels = async (req, res) => {
       reels.pop();
     }
 
-    const nextCursor = hasNextPage && reels.length > 0 ? reels[reels.length - 1].createdAt : null;
+    const nextCursor = hasNextPage && reels.length > 0 ? reels[reels.length - 1].randomOrder : null;
 
     res.json({
       success: true,
