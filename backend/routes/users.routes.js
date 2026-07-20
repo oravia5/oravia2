@@ -16,7 +16,7 @@ import { validateUploadLimit, profileUpload } from '../middleware/upload.middlew
 
 const router = express.Router();
 
-router.get('/search', searchUsers);
+router.get('/search', optionalAuth, searchUsers);
 router.post('/change-password', protect, changePassword);
 router.get('/:username', optionalAuth, getUserProfile);
 router.put('/me', protect, profileUpload, validateUploadLimit, updateProfile);

@@ -68,11 +68,17 @@ export const getUserProfile = async (req, res) => {
     const postCount = await Post.countDocuments({ author: user._id, isArchived: { $ne: true }, status: { $ne: 'draft' } });
 
     let isFollowing = false;
+    let isFollowingBack = false;
     if (req.user && req.user._id.toString() !== user._id.toString()) {
+      const myIdStr = req.user._id.toString();
       isFollowing = user.followers.some(
-        (id) => id.toString() === req.user._id.toString()
+        (id) => id.toString() === myIdStr
+      );
+      isFollowingBack = user.following.some(
+        (id) => id.toString() === myIdStr
       );
     }
+    const isMutual = isFollowing && isFollowingBack;
 
     res.json({
       success: true,
@@ -89,6 +95,8 @@ export const getUserProfile = async (req, res) => {
         followers: user.followers,
         following: user.following,
         isFollowing,
+        isFollowingBack,
+        isMutual,
         website: user.website || '',
         location: user.location || '',
         dob: user.dob || null,
@@ -519,9 +527,32 @@ export const searchUsers = async (req, res) => {
       ...blockQuery,
     });
 
+    const mappedUsers = users.map(userObj => {
+      const u = userObj.toObject();
+      let isFollowing = false;
+      let isFollowingBack = false;
+      
+      if (req.user) {
+        const myIdStr = req.user._id.toString();
+        isFollowing = u.followers && u.followers.some(id => id.toString() === myIdStr);
+        isFollowingBack = u.following && u.following.some(id => id.toString() === myIdStr);
+      }
+      
+      return {
+        _id: u._id,
+        username: u.username,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+        bio: u.bio,
+        isFollowing,
+        isFollowingBack,
+        isMutual: isFollowing && isFollowingBack,
+      };
+    });
+
     res.json({
       success: true,
-      data: users,
+      data: mappedUsers,
     });
   } catch (error) {
     console.error(error);

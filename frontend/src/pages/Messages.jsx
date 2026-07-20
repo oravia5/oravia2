@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import client from '../api/client';
 import ChatWindow from '../components/ChatWindow/ChatWindow';
+import { useAuth } from '../context/AuthContext';
 
 export default function Messages() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user: currentUser } = useAuth();
 
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +16,7 @@ export default function Messages() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [selectedChat, setSelectedChat] = useState(null);
+  const openedRef = useRef(false);
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -65,6 +69,17 @@ export default function Messages() {
       console.error('Failed to register conversation:', err);
     }
   }, []);
+
+  useEffect(() => {
+    if (location.state?.openChatUser && currentUser && !openedRef.current) {
+      openedRef.current = true;
+      const targetUser = location.state.openChatUser;
+      const ids = [currentUser._id.toString(), targetUser._id.toString()].sort();
+      const channelId = `dm:${ids[0]}:${ids[1]}`;
+      openChat(channelId, targetUser);
+      navigate(window.location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, currentUser, openChat, navigate]);
 
   if (selectedChat) {
     return (

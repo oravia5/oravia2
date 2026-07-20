@@ -132,6 +132,30 @@ export default function Search() {
                         </div>
                         {item.bio && <p className="result-bio-preview">{item.bio}</p>}
                       </div>
+                      {item.isMutual && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate('/messages', { state: { openChatUser: item } });
+                          }}
+                          style={{
+                            background: 'var(--accent-indigo)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            marginRight: '12px',
+                            zIndex: 10
+                          }}
+                        >
+                          Message
+                        </button>
+                      )}
                       <div className="chevron-right-arrow">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <polyline points="9 18 15 12 9 6"></polyline>
