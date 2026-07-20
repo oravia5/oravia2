@@ -35,6 +35,16 @@ export default function Settings() {
   const [pwSuccess, setPwSuccess] = useState('');
   const [pwChanging, setPwChanging] = useState(false);
 
+  // Username edit states
+  const [username, setUsername] = useState(user?.username || '');
+  const [usernameSaving, setUsernameSaving] = useState(false);
+
+  useEffect(() => {
+    if (user?.username) {
+      setUsername(user.username);
+    }
+  }, [user]);
+
   // Blocklist states
   const [blockedUsers, setBlockedUsers] = useState([]);
 
@@ -81,6 +91,35 @@ export default function Settings() {
       setPwError(err.response?.data?.message || 'Incorrect current password.');
     } finally {
       setPwChanging(false);
+    }
+  };
+
+  const handleUsernameSave = async () => {
+    if (!username.trim()) return;
+    setUsernameSaving(true);
+    setSaveStatus('saving');
+    const formData = new FormData();
+    formData.append('username', username.trim().toLowerCase());
+    try {
+      const res = await client.put('/users/me', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success) {
+        updateUserData(res.data.data);
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus(''), 1500);
+      } else {
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus(''), 2000);
+        alert(res.data.message || 'Failed to update username');
+      }
+    } catch (err) {
+      console.error('Error updating username:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus(''), 2000);
+      alert(err.response?.data?.message || 'Username already taken or invalid');
+    } finally {
+      setUsernameSaving(false);
     }
   };
 
@@ -400,6 +439,84 @@ export default function Settings() {
               </div>
             </div>
 
+            {/* Section: Account Credentials */}
+            <div className="settings-section">
+              <div className="section-header">
+                <Lock size={18} className="section-icon text-indigo" />
+                <h3 className="section-title">Account Credentials</h3>
+              </div>
+              <p className="section-desc">Manage your email, username, and password.</p>
+
+              <div className="settings-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', color: '#a1a1aa', fontWeight: '500' }}>Email Address (Display Only)</label>
+                  <input
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: '#71717a',
+                      fontSize: '14px',
+                      cursor: 'not-allowed',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', color: '#a1a1aa', fontWeight: '500' }}>Username</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter username"
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        borderRadius: '8px',
+                        background: '#111',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: '#fff',
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    <button
+                      onClick={handleUsernameSave}
+                      disabled={username.toLowerCase() === user?.username?.toLowerCase() || usernameSaving}
+                      style={{
+                        padding: '0 16px',
+                        borderRadius: '8px',
+                        background: 'var(--accent-indigo)',
+                        color: '#000',
+                        border: 'none',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        opacity: (username.toLowerCase() === user?.username?.toLowerCase() || usernameSaving) ? 0.5 : 1
+                      }}
+                    >
+                      {usernameSaving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="settings-row clickable" onClick={() => setShowPasswordModal(true)} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '12px', paddingTop: '16px', paddingLeft: 0, paddingRight: 0 }}>
+                  <div className="row-info">
+                    <span className="row-label">Change Password</span>
+                    <span className="row-desc">Keep your account secure with a new password</span>
+                  </div>
+                  <Lock size={16} className="arrow-indicator" />
+                </div>
+              </div>
+            </div>
+
             {/* Section 3: Account Actions */}
             <div className="settings-section">
               <div className="section-header">
@@ -414,14 +531,6 @@ export default function Settings() {
                     <span className="row-desc">Update your display name, bio, avatar, and cover</span>
                   </div>
                   <User size={16} className="arrow-indicator" />
-                </div>
-
-                <div className="settings-row clickable" onClick={() => setShowPasswordModal(true)}>
-                  <div className="row-info">
-                    <span className="row-label">Change Password</span>
-                    <span className="row-desc">Keep your account secure with a new password</span>
-                  </div>
-                  <Lock size={16} className="arrow-indicator" />
                 </div>
 
                 <div className="settings-row clickable logout-row" onClick={handleLogoutClick}>

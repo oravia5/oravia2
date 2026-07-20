@@ -132,6 +132,7 @@ export const updateProfile = async (req, res) => {
     }
 
     const { 
+      username,
       displayName, 
       bio, 
       website, 
@@ -147,6 +148,24 @@ export const updateProfile = async (req, res) => {
       showGender,
       showNSFW
     } = req.body;
+
+    if (username !== undefined && username.toLowerCase() !== user.username.toLowerCase()) {
+      const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+      if (!usernameRegex.test(username)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username must be 3-30 characters long and contain only letters, numbers, or underscores',
+        });
+      }
+      const usernameExists = await User.findOne({ username: username.toLowerCase() });
+      if (usernameExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username is already taken',
+        });
+      }
+      user.username = username.toLowerCase();
+    }
 
     if (displayName !== undefined) user.displayName = displayName;
     if (bio !== undefined) user.bio = bio;
