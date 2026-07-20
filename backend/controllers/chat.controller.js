@@ -295,9 +295,7 @@ let stickersCache = null;
 // Get all stickers packs and files
 export const getStickers = async (req, res) => {
   try {
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}/stickers`;
+    const baseUrl = '/stickers';
 
     if (stickersCache) {
       const mapped = stickersCache.map((pack) => ({

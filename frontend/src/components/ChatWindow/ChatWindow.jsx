@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useChatContext } from '../../context/ChatContext';
 import client from '../../api/client';
 import { ArrowLeft, Send, Image, X, Play, Smile } from 'lucide-react';
+import { getFullMediaUrl } from '../../utils/mediaUrl';
 
 /* ── Typing indicator (Ably presence-based, zero server load) ── */
 function TypingIndicator({ otherUserName }) {
@@ -55,7 +56,7 @@ function MediaContent({ metadata }) {
     return (
       <div className="msg-sticker">
         <img
-          src={metadata.mediaUrl}
+          src={getFullMediaUrl(metadata.mediaUrl)}
           alt="sticker"
           className="msg-sticker-img"
           loading="lazy"
@@ -68,7 +69,7 @@ function MediaContent({ metadata }) {
     return (
       <div className="msg-media">
         <video
-          src={metadata.mediaUrl}
+          src={getFullMediaUrl(metadata.mediaUrl)}
           controls
           preload="metadata"
           className="msg-video"
@@ -81,11 +82,11 @@ function MediaContent({ metadata }) {
   return (
     <div className="msg-media">
       <img
-        src={metadata.mediaUrl}
+        src={getFullMediaUrl(metadata.mediaUrl)}
         alt=""
         className="msg-image"
         loading="lazy"
-        onClick={() => window.open(metadata.mediaUrl, '_blank')}
+        onClick={() => window.open(getFullMediaUrl(metadata.mediaUrl), '_blank')}
       />
     </div>
   );
@@ -363,7 +364,7 @@ function ChatRoom({ channelId, otherUser, onBack }) {
                       className="sticker-item-btn"
                       onClick={() => handleStickerClick(stUrl)}
                     >
-                      <img src={stUrl} alt="" loading="lazy" />
+                      <img src={getFullMediaUrl(stUrl)} alt="" loading="lazy" />
                     </button>
                   ))}
               </div>
@@ -377,7 +378,7 @@ function ChatRoom({ channelId, otherUser, onBack }) {
                     onClick={() => setActivePackId(pack.id)}
                     title={pack.name}
                   >
-                    <img src={pack.tray} alt={pack.name} />
+                    <img src={getFullMediaUrl(pack.tray)} alt={pack.name} />
                   </button>
                 ))}
               </div>
