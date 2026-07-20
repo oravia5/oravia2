@@ -56,7 +56,7 @@ function MediaContent({ metadata }) {
     return (
       <div className="msg-sticker">
         <img
-          src={getFullMediaUrl(metadata.mediaUrl)}
+          src={`${getFullMediaUrl(metadata.mediaUrl)}?v=1.0.1`}
           alt="sticker"
           className="msg-sticker-img"
           loading="lazy"
@@ -364,7 +364,7 @@ function ChatRoom({ channelId, otherUser, onBack }) {
                       className="sticker-item-btn"
                       onClick={() => handleStickerClick(stUrl)}
                     >
-                      <img src={getFullMediaUrl(stUrl)} alt="" loading="lazy" />
+                      <img src={`${getFullMediaUrl(stUrl)}?v=1.0.1`} alt="" loading="lazy" />
                     </button>
                   ))}
               </div>
@@ -378,7 +378,7 @@ function ChatRoom({ channelId, otherUser, onBack }) {
                     onClick={() => setActivePackId(pack.id)}
                     title={pack.name}
                   >
-                    <img src={getFullMediaUrl(pack.tray)} alt={pack.name} />
+                    <img src={`${getFullMediaUrl(pack.tray)}?v=1.0.1`} alt={pack.name} />
                   </button>
                 ))}
               </div>
