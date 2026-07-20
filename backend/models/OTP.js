@@ -21,6 +21,10 @@ const otpSchema = new mongoose.Schema(
       required: true,
       index: { expires: '10m' },
     },
+    registrationData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

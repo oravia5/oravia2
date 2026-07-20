@@ -27,62 +27,65 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    // 1. Check if a VERIFIED user already exists
-    const verifiedUserExists = await User.findOne({
-      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }],
-      isVerified: true,
+    // 1. Check if a user already exists in User collection
+    const userExists = await User.findOne({
+      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }]
     });
 
-    if (verifiedUserExists) {
+    if (userExists) {
       return res.status(400).json({
         success: false,
         message: 'Username or email already exists',
       });
     }
 
-    // 2. Delete any existing UNVERIFIED accounts with same username/email to prevent lockout/clashes
-    await User.deleteOne({
-      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }],
-      isVerified: false,
+    // 2. Check if there is an active pending registration in the OTP collection
+    const pendingRegistration = await OTP.findOne({
+      purpose: 'register',
+      expiresAt: { $gt: new Date() },
+      $or: [
+        { email: email.toLowerCase() },
+        { 'registrationData.username': username.toLowerCase() }
+      ]
     });
 
-    // Set default avatar URL for new users
-    const avatarUrl = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+    if (pendingRegistration) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username or email has a pending verification. Please verify or try again in 10 minutes.',
+      });
+    }
 
-    // 3. Create unverified user
-    const user = await User.create({
-      username,
-      email,
-      phone,
-      passwordHash: password, // pre-save hook will hash this
-      displayName: displayName || username,
-      bio: bio || '',
-      avatarUrl,
-      isVerified: false, // Explicitly unverified until OTP check
-      showNSFW: showNSFW === 'true' || showNSFW === true,
-    });
-
-    // 4. Generate 6-digit OTP code
+    // 3. Generate 6-digit OTP code
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
     // Delete any old registration OTPs for this email
     await OTP.deleteOne({ email: email.toLowerCase(), purpose: 'register' });
 
-    // Store OTP in database
+    // 4. Store OTP in database along with the registration details
     await OTP.create({
       email: email.toLowerCase(),
       code: otpCode,
       purpose: 'register',
       expiresAt,
+      registrationData: {
+        username: username.toLowerCase(),
+        email: email.toLowerCase(),
+        phone,
+        passwordHash: password, // will be hashed by User's pre-save hook on creation
+        displayName: displayName || username,
+        bio: bio || '',
+        showNSFW: showNSFW === 'true' || showNSFW === true,
+      }
     });
 
     // 5. Send OTP to user's email via Nodemailer
     const emailSent = await sendOTPEmail(email.toLowerCase(), otpCode, 'register');
     
     if (!emailSent) {
-      // If email fails, delete unverified user so they can retry
-      await User.deleteOne({ _id: user._id });
+      // If email fails, delete the OTP document
+      await OTP.deleteOne({ email: email.toLowerCase(), purpose: 'register' });
       return res.status(500).json({
         success: false,
         message: 'Failed to send verification email. Please try again.',
@@ -93,7 +96,7 @@ export const registerUser = async (req, res) => {
       success: true,
       message: 'Verification OTP sent to email. Please verify to activate your account.',
       data: {
-        email: user.email,
+        email: email.toLowerCase(),
       },
     });
   } catch (error) {
@@ -121,34 +124,53 @@ export const verifyRegisterOTP = async (req, res) => {
       });
     }
 
-    // Find the unverified user
-    const user = await User.findOne({ email: email.toLowerCase(), isVerified: false });
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: 'Account not found or already verified',
-      });
-    }
-
-    // Validate the OTP code
+    // 1. Find the active OTP document in database
     const otp = await OTP.findOne({
       email: email.toLowerCase(),
       code: code.trim(),
       purpose: 'register',
+      expiresAt: { $gt: new Date() }
     });
 
-    if (!otp || otp.expiresAt < new Date()) {
+    if (!otp || !otp.registrationData) {
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired verification code',
       });
     }
 
-    // Activate the user
-    user.isVerified = true;
-    await user.save();
+    const reg = otp.registrationData;
 
-    // Delete the verified OTP
+    // 2. Double check if username/email got registered by someone else in the meantime
+    const userExists = await User.findOne({
+      $or: [{ email: reg.email }, { username: reg.username }]
+    });
+
+    if (userExists) {
+      await otp.deleteOne();
+      return res.status(400).json({
+        success: false,
+        message: 'Username or email has already been registered',
+      });
+    }
+
+    // Set default avatar URL
+    const avatarUrl = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+
+    // 3. Create the verified user in the database now
+    const user = await User.create({
+      username: reg.username,
+      email: reg.email,
+      phone: reg.phone,
+      passwordHash: reg.passwordHash, // pre-save hook will hash this
+      displayName: reg.displayName,
+      bio: reg.bio,
+      avatarUrl,
+      isVerified: true, // Marked verified immediately
+      showNSFW: reg.showNSFW || false,
+    });
+
+    // 4. Delete the verified OTP
     await otp.deleteOne();
 
     res.status(200).json({
