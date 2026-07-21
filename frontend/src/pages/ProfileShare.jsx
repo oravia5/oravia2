@@ -63,26 +63,50 @@ export default function ProfileShare() {
     qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&ecc=H&margin=2&data=${encodeURIComponent(profileUrl)}`;
 
     qrImage.onload = () => {
-      // Clear canvas
+      // Clear canvas and draw QR Code
       ctx.clearRect(0, 0, qrSize, qrSize);
-
-      // Draw QR Code
       ctx.drawImage(qrImage, 0, 0, qrSize, qrSize);
 
-      // 2. Color with Gradient (using composite operation)
-      ctx.globalCompositeOperation = 'source-in';
-      const gradient = ctx.createLinearGradient(0, 0, qrSize, qrSize);
-      // Oravia Brand premium orange/indigo gradient
-      gradient.addColorStop(0, '#f97316'); // Vibrant Orange
-      gradient.addColorStop(0.5, '#ec4899'); // Rose Pink
-      gradient.addColorStop(1, '#6366f1'); // Indigo Blue
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, qrSize, qrSize);
+      // Get pixel data
+      const imgData = ctx.getImageData(0, 0, qrSize, qrSize);
+      const data = imgData.data;
 
-      // Restore composite operation for drawing logo on top
-      ctx.globalCompositeOperation = 'source-over';
+      // Create an offscreen canvas to render the gradient
+      const offscreen = document.createElement('canvas');
+      offscreen.width = qrSize;
+      offscreen.height = qrSize;
+      const oCtx = offscreen.getContext('2d');
+      const gradient = oCtx.createLinearGradient(0, 0, qrSize, qrSize);
+      // Indigo (#818cf8) to Purple (#c084fc) (matching dashboard color)
+      gradient.addColorStop(0, '#818cf8');
+      gradient.addColorStop(1, '#c084fc');
+      oCtx.fillStyle = gradient;
+      oCtx.fillRect(0, 0, qrSize, qrSize);
 
-      // 3. Load and Draw Avatar in the center
+      const gradData = oCtx.getImageData(0, 0, qrSize, qrSize).data;
+
+      // Map black QR blocks to gradient, and white background to transparent
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        // If the pixel is dark (black QR block)
+        if (r < 120 && g < 120 && b < 120) {
+          data[i] = gradData[i];       // Red
+          data[i + 1] = gradData[i + 1]; // Green
+          data[i + 2] = gradData[i + 2]; // Blue
+          data[i + 3] = 255;             // Alpha
+        } else {
+          // Make background transparent
+          data[i + 3] = 0;
+        }
+      }
+
+      // Put pixel data back
+      ctx.putImageData(imgData, 0, 0);
+
+      // Load avatar to draw in the center
       const avatarImage = new Image();
       avatarImage.crossOrigin = 'anonymous';
       avatarImage.src = profile.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
@@ -92,13 +116,13 @@ export default function ProfileShare() {
         const logoX = (qrSize - logoSize) / 2;
         const logoY = (qrSize - logoSize) / 2;
 
-        // Draw white rounded background panel for the avatar spacer
+        // White border spacer circle
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(qrSize / 2, qrSize / 2, (logoSize / 2) + 4, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw circular cropped profile image
+        // Circular profile photo
         ctx.save();
         ctx.beginPath();
         ctx.arc(qrSize / 2, qrSize / 2, logoSize / 2, 0, Math.PI * 2);
@@ -112,7 +136,6 @@ export default function ProfileShare() {
       };
 
       avatarImage.onerror = () => {
-        // Fallback: draw local default placeholder if user avatar fails (CORS block etc)
         const fallbackImg = new Image();
         fallbackImg.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
         fallbackImg.onload = () => {
@@ -267,7 +290,7 @@ export default function ProfileShare() {
           left: -20%;
           width: 140%;
           height: 140%;
-          background: radial-gradient(circle at 50% 30%, rgba(249, 115, 22, 0.08) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 80%);
+          background: radial-gradient(circle at 50% 30%, rgba(129, 140, 248, 0.15) 0%, rgba(192, 132, 252, 0.15) 50%, transparent 80%);
           z-index: -1;
           pointer-events: none;
         }
@@ -364,10 +387,10 @@ export default function ProfileShare() {
         }
 
         .action-full-width-btn.primary {
-          background: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #6366f1 100%);
+          background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
           border: none;
           color: #ffffff;
-          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+          box-shadow: 0 6px 20px rgba(129, 140, 248, 0.25);
         }
 
         .action-full-width-btn.primary:hover {
