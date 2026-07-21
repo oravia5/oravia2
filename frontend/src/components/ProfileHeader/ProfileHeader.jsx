@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { Camera, Edit3, LogOut, Settings, X, AlertCircle, MapPin, Link2, Calendar, Ban, Briefcase, User, Phone, Share2, Copy, Check, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
@@ -989,7 +990,7 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
       `}</style>
 
       {/* Share Profile Drawer */}
-      {isShareOpen && (
+      {isShareOpen && createPortal(
         <div className="share-drawer-overlay" onClick={() => setIsShareOpen(false)}>
           <div className="share-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="share-drawer-header">
@@ -1031,7 +1032,8 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
