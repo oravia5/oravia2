@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreHorizontal } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreVertical } from 'lucide-react';
 import { queueView } from '../../utils/viewTracker';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
@@ -338,7 +338,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
               onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }} 
               aria-label="Snip Options"
             >
-              <MoreHorizontal size={26} />
+              <MoreVertical size={26} />
             </button>
             {showMenu && (
               <div className="reel-dropdown-menu" style={{

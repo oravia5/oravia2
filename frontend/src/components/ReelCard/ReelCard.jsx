@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreHorizontal } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreVertical } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -250,7 +250,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
               aria-label="Snip Options"
               style={{ background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', padding: '4px' }}
             >
-              <MoreHorizontal size={18} />
+              <MoreVertical size={18} />
             </button>
             
             {showMenu && (
