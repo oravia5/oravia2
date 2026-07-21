@@ -1,0 +1,82 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name oravia.co.in www.oravia.co.in;
+
+    # Serve built React static files
+    root /home/ubuntu/oravia/frontend/dist;
+    index index.html;
+
+    # Serve sitemap from backend
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:5000/sitemap.xml;
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        set $is_bot "";
+        if ($http_user_agent ~* "whatsapp|telegram|facebookexternalhit|twitterbot|slackbot|discordbot|googlebot|linkedinbot") {
+            set $is_bot "yes";
+        }
+
+        set $is_post "";
+        if ($request_uri ~* "^/post/([a-f0-9]+)$") {
+            set $is_post "yes";
+        }
+
+        set $is_profile "";
+        if ($request_uri ~* "^/profile/([a-zA-Z0-9_\-\.]+)(/share)?$") {
+            set $is_profile "yes";
+        }
+
+        if ($is_bot$is_post = "yesyes") {
+            rewrite ^/post/([a-f0-9]+)$ /og/post/$1 last;
+        }
+
+        if ($is_bot$is_profile = "yesyes") {
+            rewrite ^/profile/([a-zA-Z0-9_\-\.]+)(/share)?$ /og/profile/$1 last;
+        }
+
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Forward OG preview requests to backend
+    location /og {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Forward API requests to backend
+    location /api {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        # Increase body upload size limit
+        client_max_body_size 100M;
+    }
+
+    # Serve uploaded files
+    location /uploads {
+        alias /home/ubuntu/oravia/backend/uploads;
+    }
+
+    # Serve sticker files
+    location /stickers {
+        alias /home/ubuntu/oravia/backend/stickers;
+    }
+}

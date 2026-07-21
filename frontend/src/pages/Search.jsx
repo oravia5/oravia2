@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Users, FileText, Hash, MapPin, Grid, List } from 'lucide-react';
 import client from '../api/client';
@@ -7,6 +7,10 @@ import { getFullMediaUrl } from '../utils/mediaUrl';
 
 export default function Search() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'Search Accounts & Tags | Oravia';
+  }, []);
 
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState([]);

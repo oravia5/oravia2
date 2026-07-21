@@ -98,6 +98,15 @@ export default function Profile() {
     };
   }, [targetUsername]);
 
+  useEffect(() => {
+    if (profile) {
+      const name = profile.displayName || profile.username;
+      document.title = `${name} (@${profile.username}) | Oravia`;
+    } else {
+      document.title = 'Profile | Oravia';
+    }
+  }, [profile]);
+
   // Removed wishlist useEffect hook (moved to standalone settings subpages)
 
   const handleProfileUpdate = (updatedProfile) => {

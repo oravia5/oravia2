@@ -4,6 +4,8 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { connectDB } from './config/db.js';
+import User from './models/User.js';
+import Post from './models/Post.js';
 
 // Route imports
 import authRoutes from './routes/auth.routes.js';
@@ -69,6 +71,64 @@ app.use('/api/admin', adminRoutes);
 
 // OG Preview routes
 app.use('/og', ogRoutes);
+
+// Dynamic sitemap generation
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const users = await User.find({}, 'username updatedAt');
+    const posts = await Post.find({ isDraft: { $ne: true }, isArchived: { $ne: true } }, '_id updatedAt');
+
+    const baseUrl = 'https://oravia.co.in';
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Static pages -->
+  <url>
+    <loc>${baseUrl}/</loc>
+    <changefreq>always</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/snips</loc>
+    <changefreq>always</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/search</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+
+    users.forEach(user => {
+      const dateStr = user.updatedAt ? user.updatedAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      xml += `  <url>
+    <loc>${baseUrl}/profile/${user.username}</loc>
+    <lastmod>${dateStr}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>\n`;
+    });
+
+    posts.forEach(post => {
+      const dateStr = post.updatedAt ? post.updatedAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      xml += `  <url>
+    <loc>${baseUrl}/post/${post._id}</loc>
+    <lastmod>${dateStr}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>\n`;
+    });
+
+    xml += `</urlset>`;
+
+    res.set('Content-Type', 'text/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('Sitemap generation error:', error);
+    res.status(500).send('Error generating sitemap');
+  }
+});
 
 // Internal moderation routes
 app.use('/api/internal', internalRoutes);

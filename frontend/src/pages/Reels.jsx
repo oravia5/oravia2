@@ -106,6 +106,10 @@ export default function Reels() {
     fetchReels();
   }, [location.state]);
 
+  useEffect(() => {
+    document.title = 'Explore Snips | Oravia';
+  }, []);
+
   const handleScroll = (e) => {
     if (scrollRaf.current) return;
     scrollRaf.current = requestAnimationFrame(() => {

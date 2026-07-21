@@ -103,4 +103,84 @@ router.get('/post/:id', async (req, res) => {
   }
 });
 
+/**
+ * GET /og/profile/:username
+ */
+router.get('/profile/:username', async (req, res) => {
+  try {
+    const usernameParam = req.params.username;
+    const user = await User.findOne({ username: new RegExp(`^${usernameParam}$`, 'i') });
+
+    if (!user) {
+      return res.redirect('https://oravia.co.in/');
+    }
+
+    const name = user.displayName || user.username || 'Oravia User';
+    const title = `${name} (@${user.username}) | Oravia`;
+    const description = user.bio || `Check out ${name}'s profile on Oravia — Connecting Moments`;
+
+    // Resolve avatar URL
+    let imageUrl = user.avatarUrl || '';
+    if (imageUrl) {
+      if (imageUrl.startsWith('/uploads/')) {
+        imageUrl = `https://oravia.co.in${imageUrl}`;
+      }
+    } else {
+      imageUrl = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150';
+    }
+
+    const canonicalUrl = `https://oravia.co.in/profile/${user.username}`;
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>${title}</title>
+    <meta name="description" content="${description}" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="300" />
+    <meta property="og:image:height" content="300" />
+    <meta property="og:url" content="${canonicalUrl}" />
+    <meta property="og:site_name" content="Oravia" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+
+    <!-- Schema.org Person Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "${name.replace(/"/g, '\\"')}",
+      "alternateName": "${user.username.replace(/"/g, '\\"')}",
+      "image": "${imageUrl}",
+      "url": "${canonicalUrl}",
+      "description": "${description.replace(/"/g, '\\"')}"
+    }
+    </script>
+
+    <!-- Redirect real users to the SPA -->
+    <meta http-equiv="refresh" content="0;url=${canonicalUrl}" />
+</head>
+<body>
+    <p>Redirecting to <a href="${canonicalUrl}">Oravia</a>...</p>
+</body>
+</html>`;
+
+    res.set('Content-Type', 'text/html');
+    res.send(html);
+  } catch (error) {
+    console.error('OG Profile meta generation error:', error.message);
+    res.redirect('https://oravia.co.in/');
+  }
+});
+
 export default router;

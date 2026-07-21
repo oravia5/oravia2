@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /snips
+Allow: /profile/
+Allow: /post/
+Allow: /sitemap.xml
+Disallow: /admin
+Disallow: /settings
+Disallow: /messages
+Disallow: /forgot-password
+Disallow: /verify-otp
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://oravia.co.in/sitemap.xml

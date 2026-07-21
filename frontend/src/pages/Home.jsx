@@ -77,6 +77,10 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    document.title = 'Home | Oravia';
+  }, []);
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
