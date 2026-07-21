@@ -44,7 +44,8 @@ client.interceptors.response.use(
         !path.startsWith('/login') &&
         !path.startsWith('/register') &&
         !path.startsWith('/verify-otp') &&
-        !path.startsWith('/forgot-password')
+        !path.startsWith('/forgot-password') &&
+        !path.startsWith('/post/')
       ) {
         window.location.href = '/login';
       }

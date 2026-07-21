@@ -42,7 +42,11 @@ export const getFeed = async (req, res) => {
 
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
-      query.isNSFW = { $ne: true };
+      if (req.user) {
+        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        query.isNSFW = { $ne: true };
+      }
       query.moderationStatus = { $ne: 'pending' };
     }
 
@@ -126,7 +130,11 @@ export const getFollowingFeed = async (req, res) => {
 
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
-      query.isNSFW = { $ne: true };
+      if (req.user) {
+        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        query.isNSFW = { $ne: true };
+      }
       query.moderationStatus = { $ne: 'pending' };
     }
 
@@ -260,7 +268,11 @@ export const getNearYouFeed = async (req, res) => {
 
       const showNSFW = req.user ? req.user.showNSFW : false;
       if (!showNSFW) {
-        query.isNSFW = { $ne: true };
+        if (req.user) {
+          query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+        } else {
+          query.isNSFW = { $ne: true };
+        }
         query.moderationStatus = { $ne: 'pending' };
       }
 
@@ -978,7 +990,11 @@ export const getPosts = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
     const isOwnProfile = req.user && author && req.user._id.toString() === author.toString();
     if (!showNSFW && !isOwnProfile) {
-      query.isNSFW = { $ne: true };
+      if (req.user) {
+        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        query.isNSFW = { $ne: true };
+      }
       query.moderationStatus = { $ne: 'pending' };
     }
 
@@ -1010,7 +1026,11 @@ export const getPostsByHashtag = async (req, res) => {
     const query = { tags: tag };
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
-      query.isNSFW = { $ne: true };
+      if (req.user) {
+        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        query.isNSFW = { $ne: true };
+      }
       query.moderationStatus = { $ne: 'pending' };
     }
 
@@ -1042,7 +1062,11 @@ export const getPostsByLocation = async (req, res) => {
     const query = { location: { $regex: new RegExp(`^${locationName}$`, 'i') } };
     const showNSFW = req.user ? req.user.showNSFW : false;
     if (!showNSFW) {
-      query.isNSFW = { $ne: true };
+      if (req.user) {
+        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        query.isNSFW = { $ne: true };
+      }
       query.moderationStatus = { $ne: 'pending' };
     }
 
@@ -1088,7 +1112,11 @@ export const searchPosts = async (req, res) => {
       type: { $ne: 'reel' }
     };
     if (!showNSFW) {
-      postQuery.isNSFW = { $ne: true };
+      if (req.user) {
+        postQuery.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        postQuery.isNSFW = { $ne: true };
+      }
       postQuery.moderationStatus = { $ne: 'pending' };
     }
 
@@ -1101,7 +1129,11 @@ export const searchPosts = async (req, res) => {
       tags: { $regex: escapedQuery, $options: 'i' }
     };
     if (!showNSFW) {
-      tagsQuery.isNSFW = { $ne: true };
+      if (req.user) {
+        tagsQuery.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        tagsQuery.isNSFW = { $ne: true };
+      }
       tagsQuery.moderationStatus = { $ne: 'pending' };
     }
 

@@ -89,6 +89,7 @@ export const getUserProfile = async (req, res) => {
         bio: user.bio,
         avatarUrl: user.avatarUrl,
         coverUrl: user.coverUrl || '',
+        showNSFW: user.showNSFW || false,
         followerCount: user.followers.length,
         followingCount: user.following.length,
         postCount,

@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { queueView } from '../../utils/viewTracker';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -77,6 +77,8 @@ const POPULAR_LOCATIONS = [
 ];
 
 export default function PostCard({ post, onDeleteSuccess }) {
+  const [nsfwRevealed, setNsfwRevealed] = useState(false);
+  const [showAgeGate, setShowAgeGate] = useState(false);
   const { user, updateUserData, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const carouselRef = useRef(null);
@@ -428,8 +430,73 @@ export default function PostCard({ post, onDeleteSuccess }) {
     return `${diffDays}d ago`;
   };
 
+  const mediaContainerStyle = {
+    ...(mediaAspect ? { aspectRatio: mediaAspect } : {}),
+    ...(post.isNSFW && !nsfwRevealed ? { filter: 'blur(28px)', pointerEvents: 'none' } : {}),
+    position: 'relative',
+  };
+
   return (
     <div className="post-card animate-fade" ref={postCardRef}>
+      {showAgeGate && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0,0,0,0.92)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            padding: '24px',
+          }}
+        >
+          <AlertCircle size={40} color="#fff" style={{ marginBottom: '16px' }} />
+          <div style={{ color: '#fff', fontWeight: 700, fontSize: '19px', marginBottom: '10px' }}>
+            Age Restricted Content
+          </div>
+          <div style={{ color: '#ccc', fontSize: '14px', maxWidth: '320px', marginBottom: '28px' }}>
+            This content is intended for adults 18 years or older. Please confirm your age to continue.
+          </div>
+          <button
+            onClick={() => {
+              sessionStorage.setItem('oravia_18plus_confirmed', 'true');
+              setShowAgeGate(false);
+              setNsfwRevealed(true);
+            }}
+            style={{
+              background: '#fff',
+              color: '#000',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 28px',
+              fontWeight: 600,
+              fontSize: '15px',
+              marginBottom: '12px',
+              width: '260px',
+            }}
+          >
+            Yes, I am 18 or older
+          </button>
+          <button
+            onClick={() => { window.location.href = '/'; }}
+            style={{
+              background: 'transparent',
+              color: '#aaa',
+              border: '1px solid #555',
+              borderRadius: '8px',
+              padding: '12px 28px',
+              fontWeight: 600,
+              fontSize: '15px',
+              width: '260px',
+            }}
+          >
+            No, take me back
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="post-header">
         <div className="author-header-left">
@@ -506,7 +573,42 @@ export default function PostCard({ post, onDeleteSuccess }) {
       </div>
 
       {/* Media Block */}
-      <div className="post-media-container" style={mediaAspect ? { aspectRatio: mediaAspect } : undefined}>
+      <div className="post-media-container" style={mediaContainerStyle}>
+        {post.isNSFW && !nsfwRevealed && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isAuthenticated) {
+                if (sessionStorage.getItem('oravia_18plus_confirmed') === 'true') {
+                  setNsfwRevealed(true);
+                } else {
+                  setShowAgeGate(true);
+                }
+              } else {
+                setNsfwRevealed(true);
+              }
+            }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(0,0,0,0.55)',
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+              textAlign: 'center',
+              padding: '16px',
+            }}
+          >
+            <AlertCircle size={28} color="#fff" style={{ marginBottom: '8px' }} />
+            <div style={{ color: '#fff', fontWeight: 600, fontSize: '15px' }}>Sensitive Content</div>
+            <div style={{ color: '#ddd', fontSize: '13px', marginTop: '4px' }}>This post may not be suitable for all audiences.</div>
+            <div style={{ color: '#fff', fontSize: '13px', marginTop: '10px', textDecoration: 'underline' }}>Tap to view (18+)</div>
+          </div>
+        )}
         {post.isReal && (
           <div className="post-real-badge-overlay">
             <Camera size={12} style={{ marginRight: '4px' }} /> Real

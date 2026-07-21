@@ -14,29 +14,32 @@ router.post('/update-moderation', async (req, res) => {
       return res.status(400).json({ success: false, message: 'fileKey required' });
     }
 
-    const result = await Post.findOneAndUpdate(
-      {
-        $or: [
-          { mediaUrl: { $regex: fileKey, $options: 'i' } },
-          { thumbnailUrl: { $regex: fileKey, $options: 'i' } },
-          { 'mediaItems.url': { $regex: fileKey, $options: 'i' } },
-          { 'mediaItems.thumbnailUrl': { $regex: fileKey, $options: 'i' } },
-        ],
-      },
-      { isNSFW, moderationStatus: 'completed' },
-      { new: true }
-    );
+    const existingPost = await Post.findOne({
+      $or: [
+        { mediaUrl: { $regex: fileKey, $options: 'i' } },
+        { thumbnailUrl: { $regex: fileKey, $options: 'i' } },
+        { 'mediaItems.url': { $regex: fileKey, $options: 'i' } },
+        { 'mediaItems.thumbnailUrl': { $regex: fileKey, $options: 'i' } },
+      ],
+    });
 
-    if (!result) {
-      console.log(`No post found matching fileKey: ${fileKey}`);
+    if (!existingPost) {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
 
-    console.log(`Moderation updated for post ${result._id}: isNSFW=${isNSFW}`);
-    res.json({ success: true, postId: result._id, isNSFW });
+    const finalNSFW = existingPost.isNSFW === true || isNSFW === true;
+
+    const result = await Post.findOneAndUpdate(
+      { _id: existingPost._id },
+      { isNSFW: finalNSFW, moderationStatus: 'completed' },
+      { new: true }
+    );
+
+    console.log(`Moderation updated for post ${result._id}: isNSFW=${result.isNSFW} (this call sent: ${isNSFW})`);
+    return res.json({ success: true, isNSFW: result.isNSFW });
   } catch (err) {
-    console.error('Moderation update error:', err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error('update-moderation error:', err);
+    return res.status(500).json({ success: false, message: 'Internal error' });
   }
 });
 
