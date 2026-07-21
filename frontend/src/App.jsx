@@ -29,6 +29,7 @@ import ArchivedPosts from './pages/ArchivedPosts';
 import Drafts from './pages/Drafts';
 import BlockedAccounts from './pages/BlockedAccounts';
 import AdminDashboard from './pages/AdminDashboard';
+import ProfileShare from './pages/ProfileShare';
 
 // Reusable Components
 import BottomNav from './components/BottomNav/BottomNav';
@@ -130,6 +131,7 @@ const AppLayout = () => {
         <Route path="/settings/blocked" element={<ProtectedRoute><BlockedAccounts /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/profile/:username/share" element={<ProtectedRoute><ProfileShare /></ProtectedRoute>} />
         <Route path="/profile/:username/:type" element={<ProtectedRoute><FollowList /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />

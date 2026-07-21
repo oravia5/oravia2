@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createPortal } from 'react-dom';
 import { Camera, Edit3, LogOut, Settings, X, AlertCircle, MapPin, Link2, Calendar, Ban, Briefcase, User, Phone, Share2, Copy, Check, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
@@ -9,56 +8,6 @@ import { getFullMediaUrl } from '../../utils/mediaUrl';
 export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, refetchProfile }) {
   const { logout, updateUserData } = useAuth();
   const navigate = useNavigate();
-
-  const [isShareOpen, setIsShareOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const profileUrl = `${window.location.origin}/profile/${profile.username}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}`;
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(profileUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${profile.displayName || profile.username} on Oravia`,
-          text: `Check out ${profile.displayName || profile.username}'s profile on Oravia!`,
-          url: profileUrl,
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      handleCopyLink();
-    }
-  };
-
-  const handleDownloadQR = async () => {
-    try {
-      const response = await fetch(qrCodeUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${profile.username}_oravia_qr.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      window.open(qrCodeUrl, '_blank');
-    }
-  };
   
   // Determine if viewing user is already followed
   const [isFollowing, setIsFollowing] = useState(profile.isFollowing || false);
@@ -237,7 +186,7 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
                   <Edit3 size={16} />
                   <span>Edit Profile</span>
                 </button>
-                <button className="btn-secondary settings-btn" onClick={() => setIsShareOpen(true)} aria-label="Share Profile">
+                <button className="btn-secondary settings-btn" onClick={() => navigate(`/profile/${profile.username}/share`)} aria-label="Share Profile">
                   <Share2 size={16} />
                 </button>
                 <button className="btn-secondary settings-btn" onClick={() => navigate('/settings')} aria-label="Settings">
@@ -269,7 +218,7 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
                     </button>
                     <button 
                       className="btn-secondary share-btn"
-                      onClick={() => setIsShareOpen(true)}
+                      onClick={() => navigate(`/profile/${profile.username}/share`)}
                       style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', padding: '10px 14px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                       aria-label="Share Profile"
                     >
@@ -793,248 +742,7 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
           background: radial-gradient(circle at top, rgba(255, 143, 0, 0.15) 0%, #121212 100%);
           filter: blur(40px);
         }
-
-        /* Share Drawer / Modal styling */
-        .share-drawer-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.7);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          z-index: 9999;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
-        }
-
-        .share-drawer {
-          background: rgba(18, 18, 24, 0.95);
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-          border-left: 1px solid rgba(255, 255, 255, 0.08);
-          border-right: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 28px 28px 0 0;
-          width: 100%;
-          max-width: 480px;
-          box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.5);
-          animation: slideUp 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-          box-sizing: border-box;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-
-        @media (min-width: 481px) {
-          .share-drawer-overlay {
-            align-items: center;
-          }
-          .share-drawer {
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 28px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-            animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-        }
-
-        .share-drawer-header {
-          padding: 20px 24px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .share-drawer-header h3 {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 750;
-          color: #ffffff;
-          letter-spacing: -0.01em;
-        }
-
-        .share-close-btn {
-          background: transparent;
-          border: none;
-          color: #71717a;
-          cursor: pointer;
-          padding: 6px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        }
-
-        .share-close-btn:hover {
-          color: #ffffff;
-          background: rgba(255, 255, 255, 0.06);
-        }
-
-        .share-drawer-body {
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          align-items: center;
-        }
-
-        .share-qr-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-          width: 100%;
-        }
-
-        .share-qr-box {
-          background: #ffffff;
-          padding: 12px;
-          border-radius: 20px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 180px;
-          height: 180px;
-          box-sizing: border-box;
-        }
-
-        .share-qr-image {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-
-        .share-qr-text {
-          font-size: 12px;
-          color: #71717a;
-          margin: 0;
-          text-align: center;
-          font-weight: 500;
-        }
-
-        .qr-download-btn {
-          width: auto;
-          padding: 8px 18px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          color: #e4e4e7;
-          transition: all 0.2s ease;
-        }
-
-        .qr-download-btn:hover {
-          background: rgba(255, 255, 255, 0.06);
-          border-color: rgba(255, 255, 255, 0.12);
-        }
-
-        .share-actions-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          width: 100%;
-        }
-
-        .share-action-item {
-          width: 100%;
-          padding: 14px 18px;
-          border-radius: 14px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          box-sizing: border-box;
-          transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        .share-action-item.native {
-          background: linear-gradient(135deg, var(--accent-indigo) 0%, #6366f1 100%);
-          border: none;
-          color: #ffffff;
-          box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
-        }
-
-        .share-action-item.native:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-        }
-
-        .share-action-item.copy {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          color: #e4e4e7;
-        }
-
-        .share-action-item.copy:hover {
-          background: rgba(255, 255, 255, 0.06);
-          border-color: rgba(255, 255, 255, 0.12);
-        }
-
-        .share-action-item.copy.copied {
-          background: rgba(16, 185, 129, 0.08);
-          border-color: rgba(16, 185, 129, 0.25);
-          color: #34d399;
-        }
       `}</style>
-
-      {/* Share Profile Drawer */}
-      {isShareOpen && createPortal(
-        <div className="share-drawer-overlay" onClick={() => setIsShareOpen(false)}>
-          <div className="share-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="share-drawer-header">
-              <h3>Share Profile</h3>
-              <button className="share-close-btn" onClick={() => setIsShareOpen(false)} aria-label="Close Share Drawer">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="share-drawer-body">
-              {/* QR Code Section */}
-              <div className="share-qr-section">
-                <div className="share-qr-box">
-                  <img 
-                    src={qrCodeUrl} 
-                    alt="Profile QR Code" 
-                    className="share-qr-image"
-                  />
-                </div>
-                <p className="share-qr-text">Scan to visit @{profile.username}'s profile</p>
-                <button className="qr-download-btn" onClick={handleDownloadQR}>
-                  <Download size={14} style={{ marginRight: '6px' }} /> Download QR Code
-                </button>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="share-actions-list">
-                {navigator.share && (
-                  <button className="share-action-item native" onClick={handleNativeShare}>
-                    <Share2 size={18} />
-                    <span>Share via apps...</span>
-                  </button>
-                )}
-                
-                <button className={`share-action-item copy ${copied ? 'copied' : ''}`} onClick={handleCopyLink}>
-                  {copied ? <Check size={18} /> : <Copy size={18} />}
-                  <span>{copied ? 'Link Copied!' : 'Copy Profile Link'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 }
