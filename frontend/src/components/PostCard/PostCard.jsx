@@ -175,18 +175,36 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
 
 
-  // Auto-pause & mute video when the post scrolls out of view
+  // Auto-play/pause & mute video when the post scrolls in/out of view
   useEffect(() => {
     const node = postCardRef.current;
     if (!node) return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting) {
+          if (entry.isIntersecting) {
+            // Find the active slide (carousel slide or the post container itself)
+            const slides = node.querySelectorAll('.carousel-slide');
+            const activeSlide = hasCarousel ? slides[currentSlide] : node;
+            const video = activeSlide?.querySelector('video');
+            
+            if (video) {
+              // Ensure video is muted to comply with browser autoplay security policies
+              video.muted = true;
+              video.play().catch((err) => {
+                console.log('Autoplay blocked:', err);
+              });
+              setIsPlaying(true);
+              setIsMuted(true);
+              if (hasCarousel) {
+                setVideoPlayingStates(prev => ({ ...prev, [currentSlide]: true }));
+                setVideoMutedStates(prev => ({ ...prev, [currentSlide]: true }));
+              }
+            }
+          } else {
             const video = node.querySelector('video');
             if (video && !video.paused) {
               video.pause();
-              video.muted = true;
             }
             setIsPlaying(false);
             setIsMuted(true);
@@ -207,7 +225,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [currentSlide, hasCarousel]);
 
   const isLiked = likes.some(id => id.toString() === user?._id?.toString());
   const isDisliked = dislikes.some(id => id.toString() === user?._id?.toString());
