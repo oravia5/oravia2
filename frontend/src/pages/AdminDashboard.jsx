@@ -1579,6 +1579,10 @@ export default function AdminDashboard() {
                   <span className="detail-value">{selectedUser.email}</span>
                 </div>
                 <div className="detail-item">
+                  <span className="detail-label">Phone Number</span>
+                  <span className="detail-value">{selectedUser.phone || 'Not Provided'}</span>
+                </div>
+                <div className="detail-item">
                   <span className="detail-label">Date Joined</span>
                   <span className="detail-value">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
                 </div>
