@@ -157,6 +157,10 @@ h1, h2, h3, h4, .brand-logo {
     visibility: hidden;
     pointer-events: none;
   }
+  .app-container.admin-app-container {
+    visibility: visible;
+    pointer-events: auto;
+  }
 }
 
 /* Custom layout for scroll snap on Reels */

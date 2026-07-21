@@ -102,7 +102,7 @@ const AppLayout = () => {
         </div>
       )}
 
-      <div className="app-container">
+      <div className={`app-container ${isAdminPath ? 'admin-app-container' : ''}`}>
       <UploadToast />
       <Routes>
         {/* Auth routes */}
