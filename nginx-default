@@ -15,26 +15,9 @@ server {
     }
 
     location / {
-        set $is_bot "";
+        # Check if the user agent is a crawler bot
         if ($http_user_agent ~* "whatsapp|telegram|facebookexternalhit|twitterbot|slackbot|discordbot|googlebot|linkedinbot") {
-            set $is_bot "yes";
-        }
-
-        set $is_post "";
-        if ($request_uri ~* "^/post/([a-f0-9]+)$") {
-            set $is_post "yes";
-        }
-
-        set $is_profile "";
-        if ($request_uri ~* "^/profile/([a-zA-Z0-9_\-\.]+)(/share)?$") {
-            set $is_profile "yes";
-        }
-
-        if ($is_bot$is_post = "yesyes") {
             rewrite ^/post/([a-f0-9]+)$ /og/post/$1 last;
-        }
-
-        if ($is_bot$is_profile = "yesyes") {
             rewrite ^/profile/([a-zA-Z0-9_\-\.]+)(/share)?$ /og/profile/$1 last;
         }
 
