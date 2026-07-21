@@ -284,7 +284,7 @@ export default function Profile() {
                       <div 
                         key={reel._id} 
                         className="rednote-post-card"
-                        onClick={() => navigate('/snips', { state: { activeId: reel._id } })}
+                        onClick={() => navigate('/snips', { state: { activeId: reel._id, reelsList: reels } })}
                       >
                         <div className="card-media-wrapper">
                           {reel.thumbnailUrl ? (
@@ -383,7 +383,12 @@ export default function Profile() {
                           className="rednote-post-card"
                           onClick={() => {
                             if (item.type === 'reel') {
-                              navigate('/snips', { state: { activeId: item._id } });
+                              navigate('/snips', { 
+                                state: { 
+                                  activeId: item._id, 
+                                  reelsList: (customAlbumsMap[selectedAlbum] || []).filter(i => i.type === 'reel') 
+                                } 
+                              });
                             } else {
                               navigate(`/post/${item._id}`, { state: { posts: customAlbumsMap[selectedAlbum] || [], scrollToId: item._id } });
                             }

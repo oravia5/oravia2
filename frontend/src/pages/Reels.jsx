@@ -24,6 +24,34 @@ export default function Reels() {
   const scrollRaf = useRef(null);
 
   const fetchReels = async () => {
+    // If a list of reels is passed in the navigation state, use it directly
+    if (location.state?.reelsList) {
+      const passedReels = location.state.reelsList;
+      setReels(passedReels);
+      setNextCursor(null);
+      setHasMore(false);
+      setLoading(false);
+
+      const targetId = location.state?.activeId;
+      if (targetId) {
+        const idx = passedReels.findIndex((r) => r._id === targetId);
+        if (idx !== -1) {
+          setActiveIndex(idx);
+          // Wait for DOM layout to trigger scroll snap centering
+          setTimeout(() => {
+            if (containerRef.current) {
+              const height = containerRef.current.clientHeight;
+              containerRef.current.scrollTo({
+                top: idx * height,
+                behavior: 'auto', // immediate jump
+              });
+            }
+          }, 100);
+        }
+      }
+      return;
+    }
+
     try {
       const res = await client.get('/reels?limit=5');
       if (res.data.success) {
