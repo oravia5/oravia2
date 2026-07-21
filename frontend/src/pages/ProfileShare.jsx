@@ -194,9 +194,7 @@ export default function ProfileShare() {
       <style>{`
         .share-page-wrapper {
           min-height: 100vh;
-          background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.1), transparent 60%), 
-                      radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.08), transparent 60%), 
-                      #09090b;
+          background: #09090b;
           color: #f4f4f5;
           font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
           display: flex;
@@ -266,9 +264,7 @@ export default function ProfileShare() {
 
         /* Digital ID Badge Card */
         .digital-badge-card {
-          background: rgba(20, 20, 25, 0.75);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
+          background: #18181b;
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 32px;
           padding: 32px 24px;
@@ -284,15 +280,7 @@ export default function ProfileShare() {
 
         /* Ambient colored lighting behind the badge */
         .digital-badge-card::before {
-          content: '';
-          position: absolute;
-          top: -20%;
-          left: -20%;
-          width: 140%;
-          height: 140%;
-          background: radial-gradient(circle at 50% 30%, rgba(129, 140, 248, 0.15) 0%, rgba(192, 132, 252, 0.15) 50%, transparent 80%);
-          z-index: -1;
-          pointer-events: none;
+          display: none;
         }
 
         .badge-user-info {
@@ -387,15 +375,16 @@ export default function ProfileShare() {
         }
 
         .action-full-width-btn.primary {
-          background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+          background: #ffffff;
           border: none;
-          color: #ffffff;
-          box-shadow: 0 6px 20px rgba(129, 140, 248, 0.25);
+          color: #000000;
+          box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
         }
 
         .action-full-width-btn.primary:hover {
+          background: #f4f4f5;
           transform: translateY(-2px);
-          box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
         }
 
         .action-full-width-btn.secondary {
