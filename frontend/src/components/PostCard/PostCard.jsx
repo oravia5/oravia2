@@ -173,7 +173,13 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const [touchStart, setTouchStart] = useState(null);
   const [touchDelta, setTouchDelta] = useState(0);
 
-
+  // Determine media items for carousel (declared before useEffect to avoid TDZ ReferenceError)
+  const hasCarousel = post.mediaItems && post.mediaItems.length > 1;
+  const mediaItems = hasCarousel
+    ? post.mediaItems
+    : post.mediaUrl
+      ? [{ url: post.mediaUrl, type: (post.type === 'video' || post.type === 'reel') ? 'video' : 'photo', thumbnailUrl: post.thumbnailUrl || '' }]
+      : [];
 
   // Auto-play/pause & mute video when the post scrolls in/out of view
   useEffect(() => {
@@ -231,13 +237,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const isDisliked = dislikes.some(id => id.toString() === user?._id?.toString());
   const isAuthor = post.author?._id === user?._id;
 
-  // Determine media items for carousel
-  const hasCarousel = post.mediaItems && post.mediaItems.length > 1;
-  const mediaItems = hasCarousel
-    ? post.mediaItems
-    : post.mediaUrl
-      ? [{ url: post.mediaUrl, type: (post.type === 'video' || post.type === 'reel') ? 'video' : 'photo', thumbnailUrl: post.thumbnailUrl || '' }]
-      : [];
+  // Determined media items at component top
 
   const goToSlide = useCallback((index) => {
     if (index < 0 || index >= mediaItems.length) return;
