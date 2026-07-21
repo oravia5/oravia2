@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ChatRoomProvider,
   useMessages,
@@ -136,6 +137,7 @@ function UploadPreview({ file, onRemove }) {
 /* ── Main Chat Room ── */
 function ChatRoom({ channelId, otherUser, onBack }) {
   usePresence();
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const myId = currentUser?._id;
 
@@ -287,7 +289,7 @@ function ChatRoom({ channelId, otherUser, onBack }) {
         <button className="chat-back-btn" onClick={onBack}>
           <ArrowLeft size={18} />
         </button>
-        <div className="chat-header-user">
+        <div className="chat-header-user" onClick={() => navigate(`/profile/${otherUser?.username}`)} style={{ cursor: 'pointer' }}>
           <div className="header-avatar-wrap">
             {otherUser?.avatarUrl && (
               <img src={otherUser.avatarUrl} alt="" className="mini-avatar" />
