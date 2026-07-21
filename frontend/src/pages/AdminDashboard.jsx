@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   // Pagination states
   const [usersPage, setUsersPage] = useState(1);
@@ -108,6 +109,11 @@ export default function AdminDashboard() {
         // Refresh active views
         if (activeTab === 'users') fetchUsers();
         fetchStats();
+
+        // Update selectedUser if open in modal
+        if (selectedUser && selectedUser._id === userId) {
+          setSelectedUser(prev => ({ ...prev, isBanned: !currentBanStatus }));
+        }
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to toggle ban status');
@@ -122,6 +128,11 @@ export default function AdminDashboard() {
         // Refresh active views
         if (activeTab === 'users') fetchUsers();
         fetchStats();
+
+        // Update selectedUser if open in modal
+        if (selectedUser && selectedUser._id === userId) {
+          setSelectedUser(prev => ({ ...prev, isVerified: !prev.isVerified }));
+        }
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to toggle verification status');
@@ -329,6 +340,9 @@ export default function AdminDashboard() {
           flex-grow: 1;
           padding: 40px 48px;
           overflow-y: auto;
+          overflow-x: hidden;
+          width: 100%;
+          max-width: 100%;
           box-sizing: border-box;
         }
 
@@ -496,7 +510,11 @@ export default function AdminDashboard() {
           border: 1px solid rgba(255, 255, 255, 0.06);
           border-radius: 20px;
           overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
         }
 
         .admin-table {
@@ -530,7 +548,7 @@ export default function AdminDashboard() {
         }
 
         .admin-table tr:hover td {
-          background: rgba(255, 255, 255, 0.015);
+          background: rgba(255, 255, 255, 0.025);
         }
 
         .user-info {
@@ -909,6 +927,161 @@ export default function AdminDashboard() {
           gap: 10px;
         }
 
+        /* Modal Styles */
+        .admin-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.75);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+
+        .admin-modal {
+          background: rgba(18, 18, 24, 0.95);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          max-width: 520px;
+          width: 100%;
+          box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+          overflow: hidden;
+          animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          display: flex;
+          flex-direction: column;
+          box-sizing: border-box;
+        }
+
+        @keyframes modalScaleIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+          padding: 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 750;
+          letter-spacing: -0.02em;
+          color: #ffffff;
+        }
+
+        .modal-close-btn {
+          background: transparent;
+          border: none;
+          color: #71717a;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+
+        .modal-close-btn:hover {
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .modal-body {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          overflow-y: auto;
+          max-height: calc(80vh - 150px);
+        }
+
+        .modal-user-profile-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .modal-user-avatar {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-user-names {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .modal-user-names h4 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 700;
+          color: #ffffff;
+        }
+
+        .modal-user-names span {
+          font-size: 13px;
+          color: #71717a;
+        }
+
+        .modal-details-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .detail-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: 12px;
+          font-size: 14px;
+          gap: 12px;
+        }
+
+        .detail-label {
+          color: #71717a;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+
+        .detail-value {
+          color: #ffffff;
+          font-weight: 600;
+          text-align: right;
+          word-break: break-all;
+        }
+
+        .detail-value-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .modal-footer {
+          padding: 20px 24px;
+          background: rgba(255, 255, 255, 0.02);
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+        }
+
         /* Responsive Breakpoints */
         @media (max-width: 991px) {
           .admin-page-wrapper {
@@ -1194,7 +1367,12 @@ export default function AdminDashboard() {
                 <tbody>
                   {users.length > 0 ? (
                     users.map((userObj) => (
-                      <tr key={userObj._id}>
+                      <tr 
+                        key={userObj._id} 
+                        onClick={() => setSelectedUser(userObj)} 
+                        style={{ cursor: 'pointer' }}
+                        title="Click to view full user details"
+                      >
                         <td>
                           <div className="user-info">
                             <img
@@ -1220,7 +1398,7 @@ export default function AdminDashboard() {
                           <button
                             className="verify-toggle-btn"
                             title="Toggle verification badge"
-                            onClick={() => handleToggleVerification(userObj._id)}
+                            onClick={(e) => { e.stopPropagation(); handleToggleVerification(userObj._id); }}
                           >
                             {userObj.isVerified ? (
                               <span className="verified-badge-circle"><Check size={10} strokeWidth={4} /></span>
@@ -1238,7 +1416,7 @@ export default function AdminDashboard() {
                           {userObj.role !== 'superadmin' ? (
                             <button
                               className={`action-btn-pill ${userObj.isBanned ? 'unban' : 'ban'}`}
-                              onClick={() => handleToggleBan(userObj._id, userObj.isBanned)}
+                              onClick={(e) => { e.stopPropagation(); handleToggleBan(userObj._id, userObj.isBanned); }}
                             >
                               {userObj.isBanned ? 'Unban User' : 'Ban User'}
                             </button>
@@ -1371,6 +1549,98 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
+
+      {/* User Details Modal */}
+      {selectedUser && (
+        <div className="admin-modal-overlay" onClick={() => setSelectedUser(null)}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>User Management Details</h3>
+              <button className="modal-close-btn" onClick={() => setSelectedUser(null)} aria-label="Close Modal">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-user-profile-header">
+                <img 
+                  className="modal-user-avatar" 
+                  src={selectedUser.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'} 
+                  alt={selectedUser.username} 
+                />
+                <div className="modal-user-names">
+                  <h4>{selectedUser.displayName || selectedUser.username}</h4>
+                  <span>@{selectedUser.username}</span>
+                </div>
+              </div>
+
+              <div className="modal-details-grid">
+                <div className="detail-item">
+                  <span className="detail-label">Email Address</span>
+                  <span className="detail-value">{selectedUser.email}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Date Joined</span>
+                  <span className="detail-value">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Role Privilege</span>
+                  <span className="detail-value">
+                    <span className={`badge ${selectedUser.role || 'user'}`}>
+                      {selectedUser.role || 'user'}
+                    </span>
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Total Submissions</span>
+                  <span className="detail-value">{selectedUser.postCount || 0} Posts</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Verification Status</span>
+                  <div className="detail-value-row">
+                    {selectedUser.isVerified ? (
+                      <span className="verified-badge-circle" style={{ marginRight: '10px' }}><Check size={10} strokeWidth={4} /></span>
+                    ) : (
+                      <span className="unverified-badge-circle" style={{ marginRight: '10px' }}></span>
+                    )}
+                    <button
+                      className="action-btn-pill"
+                      onClick={() => handleToggleVerification(selectedUser._id)}
+                    >
+                      Toggle Badge
+                    </button>
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Account Status</span>
+                  <div className="detail-value-row">
+                    <span className={`badge ${selectedUser.isBanned ? 'banned' : 'active'}`} style={{ marginRight: '10px' }}>
+                      {selectedUser.isBanned ? 'Banned' : 'Active'}
+                    </span>
+                    {selectedUser.role !== 'superadmin' ? (
+                      <button
+                        className={`action-btn-pill ${selectedUser.isBanned ? 'unban' : 'ban'}`}
+                        onClick={() => handleToggleBan(selectedUser._id, selectedUser.isBanned)}
+                      >
+                        {selectedUser.isBanned ? 'Unban User' : 'Ban User'}
+                      </button>
+                    ) : (
+                      <span className="admin-system-label">Protected</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="sidebar-footer-btn exit" onClick={() => {
+                setSelectedUser(null);
+                navigate(`/profile/${selectedUser.username}`);
+              }}>
+                <Users size={14} style={{ marginRight: '6px' }} /> View Public Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
