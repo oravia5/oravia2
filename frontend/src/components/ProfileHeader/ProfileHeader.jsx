@@ -181,21 +181,10 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
           {/* Edit/Follow Button */}
           <div className="header-actions">
             {isOwnProfile ? (
-              <>
-                <button className="btn-secondary edit-profile-btn" onClick={() => navigate('/edit-profile')}>
-                  <Edit3 size={16} />
-                  <span>Edit Profile</span>
-                </button>
-                <button className="btn-secondary settings-btn" onClick={() => navigate(`/profile/${profile.username}/share`)} aria-label="Share Profile">
-                  <Share2 size={16} />
-                </button>
-                <button className="btn-secondary settings-btn" onClick={() => navigate('/settings')} aria-label="Settings">
-                  <Settings size={16} />
-                </button>
-                <button className="btn-secondary logout-btn" onClick={logout} aria-label="Log Out">
-                  <LogOut size={16} />
-                </button>
-              </>
+              <button className="btn-secondary edit-profile-btn" onClick={() => navigate('/edit-profile')}>
+                <Edit3 size={16} />
+                <span>Edit Profile</span>
+              </button>
             ) : (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 {profile.isBlocked ? (

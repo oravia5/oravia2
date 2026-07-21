@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Grid, Film, Bookmark, AlertCircle, Folder, ArrowLeft, Archive, FileText, Download, ShoppingBag, Heart, Ban } from 'lucide-react';
+import { Grid, Film, Bookmark, AlertCircle, Folder, ArrowLeft, Archive, FileText, Download, ShoppingBag, Heart, Ban, Menu, X, Settings, Share2, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
 import ProfileHeader from '../components/ProfileHeader/ProfileHeader';
@@ -9,7 +9,9 @@ import { getFullMediaUrl } from '../utils/mediaUrl';
 export default function Profile() {
   const navigate = useNavigate();
   const { username } = useParams();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, logout } = useAuth();
+  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const targetUsername = username || currentUser?.username;
   const isOwnProfile = !username || username.toLowerCase() === currentUser?.username?.toLowerCase();
@@ -137,9 +139,52 @@ export default function Profile() {
   return (
     <div className="profile-page-wrapper animate-fade">
       {/* Header Bar */}
-      <header className="glass-header" style={{ justifyContent: 'center' }}>
-        <span className="profile-title-header">{isOwnProfile ? 'My Profile' : `@${targetUsername}`}</span>
+      <header className="glass-header" style={{ justifyContent: 'space-between', padding: '0 16px', display: 'flex', alignItems: 'center' }}>
+        {isOwnProfile ? (
+          <button className="hamburger-menu-btn" onClick={() => setIsMenuOpen(true)} aria-label="Open Menu">
+            <Menu size={22} />
+          </button>
+        ) : (
+          <button className="back-btn-circle" onClick={() => navigate(-1)} aria-label="Go Back" style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <ArrowLeft size={18} />
+          </button>
+        )}
+        <span className="profile-title-header" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+          {isOwnProfile ? 'My Profile' : `@${targetUsername}`}
+        </span>
+        <div style={{ width: '36px' }} /> {/* Spacer to balance left icon */}
       </header>
+
+      {/* Sliding Sidebar Menu */}
+      {isOwnProfile && (
+        <div className={`profile-menu-overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}>
+          <div className="profile-menu-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-menu-header">
+              <h3>Menu</h3>
+              <button className="menu-close-btn" onClick={() => setIsMenuOpen(false)} aria-label="Close Menu">
+                <X size={22} />
+              </button>
+            </div>
+            
+            <nav className="profile-menu-links">
+              <button className="profile-menu-item" onClick={() => { setIsMenuOpen(false); navigate(`/profile/${profile?.username || currentUser?.username}/share`); }}>
+                <Share2 size={18} />
+                <span>Share Profile</span>
+              </button>
+              
+              <button className="profile-menu-item" onClick={() => { setIsMenuOpen(false); navigate('/settings'); }}>
+                <Settings size={18} />
+                <span>Settings</span>
+              </button>
+              
+              <button className="profile-menu-item logout" onClick={() => { setIsMenuOpen(false); logout(); }}>
+                <LogOut size={18} />
+                <span>Logout</span>
+              </button>
+            </nav>
+          </div>
+        </div>
+      )}
 
       {/* Main Info */}
       <main className="profile-page-body">
@@ -924,6 +969,139 @@ export default function Profile() {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+
+        /* Hamburger button */
+        .hamburger-menu-btn {
+          background: transparent;
+          border: none;
+          color: #ffffff;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 6px;
+          border-radius: 50%;
+          transition: all 0.2s ease;
+        }
+
+        .hamburger-menu-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Drawer Overlay */
+        .profile-menu-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 9999;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .profile-menu-overlay.open {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        /* Drawer Pane */
+        .profile-menu-drawer {
+          position: absolute;
+          top: 0;
+          left: -280px;
+          bottom: 0;
+          width: 280px;
+          background: #121214;
+          border-right: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 15px 0 35px rgba(0, 0, 0, 0.5);
+          display: flex;
+          flex-direction: column;
+          transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          box-sizing: border-box;
+        }
+
+        .profile-menu-overlay.open .profile-menu-drawer {
+          left: 0;
+        }
+
+        .profile-menu-header {
+          padding: 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .profile-menu-header h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 750;
+          color: #ffffff;
+        }
+
+        .menu-close-btn {
+          background: transparent;
+          border: none;
+          color: #71717a;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+
+        .menu-close-btn:hover {
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .profile-menu-links {
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .profile-menu-item {
+          background: transparent;
+          border: none;
+          color: #a1a1aa;
+          padding: 14px 16px;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          width: 100%;
+          text-align: left;
+          box-sizing: border-box;
+          transition: all 0.2s ease;
+        }
+
+        .profile-menu-item:hover {
+          color: #ffffff;
+          background: rgba(255, 255, 255, 0.03);
+        }
+
+        .profile-menu-item.logout {
+          color: #f87171;
+          margin-top: 16px;
+          border-top: 1px solid rgba(255, 255, 255, 0.04);
+          padding-top: 20px;
+          border-radius: 0;
+        }
+
+        .profile-menu-item.logout:hover {
+          background: rgba(239, 68, 68, 0.08);
+          color: #ef4444;
+          border-radius: 12px;
         }
       `}</style>
     </div>
