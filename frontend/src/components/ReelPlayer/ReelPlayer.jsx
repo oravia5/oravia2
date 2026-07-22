@@ -54,7 +54,9 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [shareCount, setShareCount] = useState(reel.shareCount || 0);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(() => {
+    return sessionStorage.getItem('oravia_sound_enabled') !== 'true';
+  });
   const [reelProgress, setReelProgress] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [showLikesSheet, setShowLikesSheet] = useState(false);
@@ -73,6 +75,9 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   useEffect(() => {
     if (videoRef.current) {
       if (isActive) {
+        const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+        videoRef.current.muted = !soundEnabled;
+        setIsMuted(!soundEnabled);
         videoRef.current.play()
           .then(() => setIsPlaying(true))
           .catch((err) => console.log('Autoplay block:', err.message));
@@ -300,7 +305,15 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
       {/* Sound Controller overlay */}
       <button 
         className="reel-sound-btn" 
-        onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          const nextMuted = !isMuted;
+          setIsMuted(nextMuted);
+          if (videoRef.current) {
+            videoRef.current.muted = nextMuted;
+          }
+          sessionStorage.setItem('oravia_sound_enabled', nextMuted ? 'false' : 'true');
+        }}
         aria-label="Toggle Sound"
       >
         {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
