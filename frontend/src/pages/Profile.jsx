@@ -489,10 +489,100 @@ export default function Profile() {
         )}
       </main>
 
+      {!isAuthenticated && (
+        <div className="guest-cta-floating-banner">
+          <div className="guest-cta-content">
+            <div className="guest-cta-text">
+              <strong>Enjoying @{profile?.username || targetUsername}'s content?</strong>
+              <span>Join Oravia to follow, like & chat!</span>
+            </div>
+            <div className="guest-cta-actions">
+              <button onClick={() => navigate('/login')} className="guest-cta-btn secondary">Log In</button>
+              <button onClick={() => navigate('/register')} className="guest-cta-btn primary">Sign Up</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .profile-page-wrapper {
           min-height: 100vh;
           background-color: #000000;
+          color: #ffffff;
+        }
+
+        .guest-cta-floating-banner {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: calc(100% - 32px);
+          max-width: 440px;
+          background: rgba(18, 18, 20, 0.88);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 16px;
+          padding: 12px 16px;
+          z-index: 999;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .guest-cta-content {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .guest-cta-text {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .guest-cta-text strong {
+          font-size: 13px;
+          color: #ffffff;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .guest-cta-text span {
+          font-size: 11px;
+          color: #a1a1aa;
+          line-height: 1.3;
+        }
+
+        .guest-cta-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .guest-cta-btn {
+          padding: 7px 14px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+          transition: all 0.2s ease;
+        }
+
+        .guest-cta-btn.secondary {
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .guest-cta-btn.primary {
+          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
           color: #ffffff;
         }
 

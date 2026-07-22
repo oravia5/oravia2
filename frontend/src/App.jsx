@@ -130,7 +130,7 @@ const AppLayout = () => {
         <Route path="/settings/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
         <Route path="/settings/blocked" element={<ProtectedRoute><BlockedAccounts /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/profile/:username" element={<Profile />} />
         <Route path="/profile/:username/share" element={<ProtectedRoute><ProfileShare /></ProtectedRoute>} />
         <Route path="/profile/:username/:type" element={<ProtectedRoute><FollowList /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />

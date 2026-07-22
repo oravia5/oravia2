@@ -28,7 +28,7 @@ import { validateUploadLimit, postUpload } from '../middleware/upload.middleware
 const router = express.Router();
 
 router.post('/views/batch', batchIncrementViews);
-router.get('/', protect, getPosts);
+router.get('/', optionalAuth, getPosts);
 router.get('/feed', optionalAuth, getFeed);
 router.get('/following', protect, getFollowingFeed);
 router.get('/near-you', optionalAuth, getNearYouFeed);

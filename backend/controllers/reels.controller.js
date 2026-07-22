@@ -19,6 +19,10 @@ export const getReels = async (req, res) => {
       status: { $ne: 'draft' },
     };
 
+    if (req.query.author) {
+      query.author = req.query.author;
+    }
+
     if (req.user) {
       const currentUser = await User.findById(req.user._id);
       if (currentUser) {

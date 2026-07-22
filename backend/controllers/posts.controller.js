@@ -989,7 +989,8 @@ export const getPosts = async (req, res) => {
 
     const showNSFW = req.user ? req.user.showNSFW : false;
     const isOwnProfile = req.user && author && req.user._id.toString() === author.toString();
-    if (!showNSFW && !isOwnProfile) {
+    const isProfileFetch = Boolean(author);
+    if (!showNSFW && !isOwnProfile && !isProfileFetch) {
       if (req.user) {
         query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
       } else {
