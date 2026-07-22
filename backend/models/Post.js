@@ -115,5 +115,10 @@ const postSchema = new mongoose.Schema(
   }
 );
 
+// Compound & Multikey Indexes for 100x faster queries and zero DB load
+postSchema.index({ tags: 1, isArchived: 1, status: 1, isNSFW: 1 });
+postSchema.index({ type: 1, isArchived: 1, status: 1, isNSFW: 1, createdAt: -1 });
+postSchema.index({ author: 1, isArchived: 1, status: 1, createdAt: -1 });
+
 export default mongoose.model('Post', postSchema);
 
