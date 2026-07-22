@@ -453,7 +453,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
     return `${diffDays}d ago`;
   };
 
-  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && !isAuthenticated;
+  const is18PlusConfirmedInSession = sessionStorage.getItem('oravia_18plus_confirmed') === 'true';
+  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && !isAuthenticated && !is18PlusConfirmedInSession;
 
   const mediaContainerStyle = {
     ...(mediaAspect ? { aspectRatio: mediaAspect } : {}),

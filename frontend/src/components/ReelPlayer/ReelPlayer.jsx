@@ -21,7 +21,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
   const [nsfwRevealed, setNsfwRevealed] = useState(false);
 
-  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && !isAuthenticated;
+  const is18PlusConfirmedInSession = sessionStorage.getItem('oravia_18plus_confirmed') === 'true';
+  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && !isAuthenticated && !is18PlusConfirmedInSession;
   
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -246,6 +247,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         <div
           onClick={(e) => {
             e.stopPropagation();
+            sessionStorage.setItem('oravia_18plus_confirmed', 'true');
             setNsfwRevealed(true);
           }}
           style={{
