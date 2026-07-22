@@ -1,5 +1,5 @@
-const CACHE_NAME = 'oravia-static-v3';
-const API_CACHE_NAME = 'oravia-api-v2';
+const CACHE_NAME = 'oravia-static-v4';
+const API_CACHE_NAME = 'oravia-api-v3';
 
 // Static files to cache immediately on installation
 const STATIC_ASSETS = [

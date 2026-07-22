@@ -11,23 +11,13 @@ import { upsertLocation } from './locations.controller.js';
 export const getReels = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 5;
-    const { cursor } = req.query;
+    const { cursor, seed } = req.query;
 
     let query = {
       type: 'reel',
       isArchived: { $ne: true },
       status: { $ne: 'draft' },
     };
-
-    const showNSFW = req.user ? req.user.showNSFW : false;
-    if (!showNSFW) {
-      if (req.user) {
-        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
-      } else {
-        query.isNSFW = { $ne: true };
-      }
-      query.moderationStatus = { $ne: 'pending' };
-    }
 
     if (req.user) {
       const currentUser = await User.findById(req.user._id);
@@ -40,21 +30,53 @@ export const getReels = async (req, res) => {
       }
     }
 
-    if (cursor) {
-      query.randomOrder = { $gt: parseFloat(cursor) };
+    let reels;
+    let hasNextPage;
+    let nextCursor;
+
+    if (seed) {
+      const hashOf = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+        }
+        return hash;
+      };
+
+      const allReels = await Post.find(query).populate(
+        'author',
+        '_id username displayName avatarUrl'
+      );
+
+      allReels.forEach((r) => {
+        r._sortKey = hashOf(seed + r._id.toString());
+      });
+      allReels.sort((a, b) => a._sortKey - b._sortKey);
+
+      const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
+      reels = allReels.slice(offset, offset + limit + 1);
+
+      hasNextPage = reels.length > limit;
+      if (hasNextPage) {
+        reels.pop();
+      }
+      nextCursor = hasNextPage ? (offset + limit).toString() : null;
+    } else {
+      if (cursor) {
+        query.randomOrder = { $gt: parseFloat(cursor) };
+      }
+
+      reels = await Post.find(query)
+        .sort({ randomOrder: 1 })
+        .limit(limit + 1)
+        .populate('author', '_id username displayName avatarUrl');
+
+      hasNextPage = reels.length > limit;
+      if (hasNextPage) {
+        reels.pop();
+      }
+      nextCursor = hasNextPage && reels.length > 0 ? reels[reels.length - 1].randomOrder : null;
     }
-
-    const reels = await Post.find(query)
-      .sort({ randomOrder: 1 })
-      .limit(limit + 1)
-      .populate('author', '_id username displayName avatarUrl');
-
-    const hasNextPage = reels.length > limit;
-    if (hasNextPage) {
-      reels.pop();
-    }
-
-    const nextCursor = hasNextPage && reels.length > 0 ? reels[reels.length - 1].randomOrder : null;
 
     res.json({
       success: true,
@@ -70,11 +92,6 @@ export const getReels = async (req, res) => {
   }
 };
 
-/**
- * @desc    Upload a new reel
- * @route   POST /api/reels
- * @access  Private
- */
 export const createReel = async (req, res) => {
   try {
     const { caption, location, album, status } = req.body;

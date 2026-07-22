@@ -22,6 +22,7 @@ export default function Reels() {
 
   const containerRef = useRef(null);
   const scrollRaf = useRef(null);
+  const seedRef = useRef(Math.random().toString(36).slice(2));
 
   const fetchReels = async () => {
     // If a list of reels is passed in the navigation state, use it directly
@@ -53,7 +54,7 @@ export default function Reels() {
     }
 
     try {
-      const res = await client.get('/reels?limit=5');
+      const res = await client.get(`/reels?limit=5&seed=${seedRef.current}`);
       if (res.data.success) {
         setReels(res.data.data);
         setNextCursor(res.data.nextCursor || null);
@@ -89,7 +90,7 @@ export default function Reels() {
     if (loadingMore || !hasMore || !nextCursor || !isAuthenticated) return;
     setLoadingMore(true);
     try {
-      const res = await client.get(`/reels?limit=5&cursor=${encodeURIComponent(nextCursor)}`);
+      const res = await client.get(`/reels?limit=5&seed=${seedRef.current}&cursor=${encodeURIComponent(nextCursor)}`);
       if (res.data.success) {
         setReels((prev) => [...prev, ...(res.data.data || [])]);
         setNextCursor(res.data.nextCursor || null);
