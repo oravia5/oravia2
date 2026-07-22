@@ -23,6 +23,18 @@ export const getReels = async (req, res) => {
       query.author = req.query.author;
     }
 
+    const showNSFW = req.user ? req.user.showNSFW : false;
+    const isProfileFetch = Boolean(req.query.author);
+
+    if (!showNSFW && !isProfileFetch) {
+      if (req.user) {
+        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+      } else {
+        query.isNSFW = { $ne: true };
+      }
+      query.moderationStatus = { $ne: 'pending' };
+    }
+
     if (req.user) {
       const currentUser = await User.findById(req.user._id);
       if (currentUser) {

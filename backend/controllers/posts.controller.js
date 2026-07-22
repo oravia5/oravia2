@@ -1024,16 +1024,24 @@ export const getPosts = async (req, res) => {
 export const getPostsByHashtag = async (req, res) => {
   try {
     const tag = req.params.tag.toLowerCase().trim();
-    const query = { tags: tag };
     const showNSFW = req.user ? req.user.showNSFW : false;
+
+    const conditions = [
+      { tags: tag },
+      { isArchived: { $ne: true } },
+      { status: { $ne: 'draft' } },
+    ];
+
     if (!showNSFW) {
       if (req.user) {
-        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+        conditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
       } else {
-        query.isNSFW = { $ne: true };
+        conditions.push({ isNSFW: { $ne: true } });
       }
-      query.moderationStatus = { $ne: 'pending' };
+      conditions.push({ moderationStatus: { $ne: 'pending' } });
     }
+
+    const query = { $and: conditions };
 
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
@@ -1060,16 +1068,24 @@ export const getPostsByHashtag = async (req, res) => {
 export const getPostsByLocation = async (req, res) => {
   try {
     const locationName = req.params.location.trim();
-    const query = { location: { $regex: new RegExp(`^${locationName}$`, 'i') } };
     const showNSFW = req.user ? req.user.showNSFW : false;
+
+    const conditions = [
+      { location: { $regex: new RegExp(`^${locationName}$`, 'i') } },
+      { isArchived: { $ne: true } },
+      { status: { $ne: 'draft' } },
+    ];
+
     if (!showNSFW) {
       if (req.user) {
-        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+        conditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
       } else {
-        query.isNSFW = { $ne: true };
+        conditions.push({ isNSFW: { $ne: true } });
       }
-      query.moderationStatus = { $ne: 'pending' };
+      conditions.push({ moderationStatus: { $ne: 'pending' } });
     }
+
+    const query = { $and: conditions };
 
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
@@ -1105,39 +1121,50 @@ export const searchPosts = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
 
     // 1. Search posts matching caption or location string
-    const postQuery = {
-      $or: [
-        { caption: { $regex: escapedQuery, $options: 'i' } },
-        { location: { $regex: escapedQuery, $options: 'i' } },
-      ],
-      type: { $ne: 'reel' }
-    };
+    const postConditions = [
+      {
+        $or: [
+          { caption: { $regex: escapedQuery, $options: 'i' } },
+          { location: { $regex: escapedQuery, $options: 'i' } },
+        ],
+      },
+      { type: { $ne: 'reel' } },
+      { isArchived: { $ne: true } },
+      { status: { $ne: 'draft' } },
+    ];
+
     if (!showNSFW) {
       if (req.user) {
-        postQuery.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+        postConditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
       } else {
-        postQuery.isNSFW = { $ne: true };
+        postConditions.push({ isNSFW: { $ne: true } });
       }
-      postQuery.moderationStatus = { $ne: 'pending' };
+      postConditions.push({ moderationStatus: { $ne: 'pending' } });
     }
+
+    const postQuery = { $and: postConditions };
 
     const matchingPosts = await Post.find(postQuery)
       .sort({ createdAt: -1 })
       .populate('author', '_id username displayName avatarUrl');
   
     // 2. Search unique hashtags matching the keyword query
-    const tagsQuery = {
-      tags: { $regex: escapedQuery, $options: 'i' }
-    };
+    const tagsConditions = [
+      { tags: { $regex: escapedQuery, $options: 'i' } },
+      { isArchived: { $ne: true } },
+      { status: { $ne: 'draft' } },
+    ];
+
     if (!showNSFW) {
       if (req.user) {
-        tagsQuery.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
+        tagsConditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
       } else {
-        tagsQuery.isNSFW = { $ne: true };
+        tagsConditions.push({ isNSFW: { $ne: true } });
       }
-      tagsQuery.moderationStatus = { $ne: 'pending' };
+      tagsConditions.push({ moderationStatus: { $ne: 'pending' } });
     }
 
+    const tagsQuery = { $and: tagsConditions };
     const postsWithTags = await Post.find(tagsQuery);
 
     const tagMap = {};
