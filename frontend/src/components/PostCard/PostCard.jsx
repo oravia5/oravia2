@@ -534,10 +534,16 @@ export default function PostCard({ post, onDeleteSuccess }) {
             />
           </Link>
           <div className="author-details">
-            <Link to={`/profile/${post.author?.username}`} className="author-name-link">
-              <span className="author-name">{post.author?.displayName || post.author?.username}</span>
-            </Link>
-            <span className="author-username">@{post.author?.username}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <Link to={`/profile/${post.author?.username}`} className="author-name-link">
+                <span className="author-name">{post.author?.displayName || post.author?.username}</span>
+              </Link>
+              <span className="author-username">@{post.author?.username}</span>
+              <span style={{ color: 'var(--text-muted, #71717a)', fontSize: '12px' }}>•</span>
+              <span className="post-time-inline" style={{ color: 'var(--text-muted, #a1a1aa)', fontSize: '12px', fontWeight: '500' }}>
+                {formatTime(post.createdAt)}
+              </span>
+            </div>
             {currentLocation && (
               <Link to={`/location/${encodeURIComponent(currentLocation)}`} className="post-location-link">
                 <MapPin size={10} style={{ marginRight: '3px' }} />
@@ -597,6 +603,32 @@ export default function PostCard({ post, onDeleteSuccess }) {
           )}
         </div>
       </div>
+
+      {/* Top Caption (Above Media) */}
+      {currentCaption && (() => {
+        const CAPTION_LIMIT = 200;
+        const isLongCaption = currentCaption.length > CAPTION_LIMIT;
+        const displayCaption = isLongCaption && !expandedCaption
+          ? currentCaption.slice(0, CAPTION_LIMIT).trimEnd()
+          : currentCaption;
+
+        return (
+          <div className="post-caption-top" style={{ padding: '4px 16px 10px 16px' }}>
+            <p className="post-caption" style={{ margin: 0, fontSize: '14px', lineHeight: '1.5', color: 'var(--text-primary, #f4f4f5)' }}>
+              {parseCaptionText(displayCaption)}
+              {isLongCaption && !expandedCaption && '... '}
+              {isLongCaption && (
+                <span
+                  onClick={() => setExpandedCaption(!expandedCaption)}
+                  style={{ color: 'var(--accent-indigo, #6366f1)', fontWeight: 600, cursor: 'pointer', marginLeft: '4px' }}
+                >
+                  {expandedCaption ? ' Show less' : 'See more'}
+                </span>
+              )}
+            </p>
+          </div>
+        );
+      })()}
 
       {/* Media Block */}
       <div className="post-media-container" style={mediaContainerStyle}>
@@ -1043,35 +1075,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="post-body">
-        {currentCaption && (() => {
-          const CAPTION_LIMIT = 200;
-          const isLongCaption = currentCaption.length > CAPTION_LIMIT;
-          const displayCaption = isLongCaption && !expandedCaption
-            ? currentCaption.slice(0, CAPTION_LIMIT).trimEnd()
-            : currentCaption;
 
-          return (
-            <p className="post-caption">
-              <Link to={`/profile/${post.author?.username}`} className="caption-username">
-                {post.author?.username}
-              </Link>{' '}
-              {parseCaptionText(displayCaption)}
-              {isLongCaption && !expandedCaption && '... '}
-              {isLongCaption && (
-                <span
-                  onClick={() => setExpandedCaption(!expandedCaption)}
-                  style={{ color: 'var(--text-muted)', fontWeight: 600, cursor: 'pointer' }}
-                >
-                  {expandedCaption ? ' Show less' : 'See more'}
-                </span>
-              )}
-            </p>
-          );
-        })()}
-        <span className="post-time">{formatTime(post.createdAt)}</span>
-      </div>
 
       {/* Comment Drawer Sheet */}
       {showComments && (
