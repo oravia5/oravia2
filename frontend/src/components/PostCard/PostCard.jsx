@@ -453,7 +453,13 @@ export default function PostCard({ post, onDeleteSuccess }) {
     return `${diffDays}d ago`;
   };
 
-  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && (user?.showNSFW !== true);
+  const isOwnContent = isAuthenticated && (
+    (post.author?._id && user?._id && post.author._id.toString() === user._id.toString()) ||
+    isSaved ||
+    isArchivedState
+  );
+
+  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && (user?.showNSFW !== true) && !isOwnContent;
 
   const mediaContainerStyle = {
     ...(mediaAspect ? { aspectRatio: mediaAspect } : {}),
