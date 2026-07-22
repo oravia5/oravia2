@@ -195,16 +195,16 @@ export default function PostCard({ post, onDeleteSuccess }) {
             const video = activeSlide?.querySelector('video');
             
             if (video) {
-              // Ensure video is muted to comply with browser autoplay security policies
-              video.muted = true;
+              const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+              video.muted = !soundEnabled;
               video.play().catch((err) => {
                 console.log('Autoplay blocked:', err);
               });
               setIsPlaying(true);
-              setIsMuted(true);
+              setIsMuted(!soundEnabled);
               if (hasCarousel) {
                 setVideoPlayingStates(prev => ({ ...prev, [currentSlide]: true }));
-                setVideoMutedStates(prev => ({ ...prev, [currentSlide]: true }));
+                setVideoMutedStates(prev => ({ ...prev, [currentSlide]: !soundEnabled }));
               }
             }
           } else {
@@ -315,7 +315,12 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   const toggleCarouselMute = (index) => {
-    setVideoMutedStates(prev => ({ ...prev, [index]: !prev[index] }));
+    setVideoMutedStates(prev => {
+      const isCurrentlyMuted = prev[index] !== undefined ? prev[index] : true;
+      const nextMuted = !isCurrentlyMuted;
+      sessionStorage.setItem('oravia_sound_enabled', nextMuted ? 'false' : 'true');
+      return { ...prev, [index]: nextMuted };
+    });
   };
 
   const handleCarouselTimeUpdate = (index, e) => {
@@ -448,9 +453,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
     return `${diffDays}d ago`;
   };
 
+  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && isAuthenticated && (user?.showNSFW !== true);
+
   const mediaContainerStyle = {
     ...(mediaAspect ? { aspectRatio: mediaAspect } : {}),
-    ...(post.isNSFW && !nsfwRevealed ? { filter: 'blur(28px)', pointerEvents: 'none' } : {}),
+    ...(isBlurred ? { filter: 'blur(28px)', pointerEvents: 'none' } : {}),
     position: 'relative',
   };
 
@@ -592,7 +599,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
       {/* Media Block */}
       <div className="post-media-container" style={mediaContainerStyle}>
-        {post.isNSFW && !nsfwRevealed && (
+        {isBlurred && (
           <div
             onClick={(e) => {
               e.stopPropagation();
