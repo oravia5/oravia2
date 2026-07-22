@@ -19,6 +19,9 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [isArchivedState, setIsArchivedState] = useState(reel.isArchived || false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
+  const [nsfwRevealed, setNsfwRevealed] = useState(false);
+
+  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && !isAuthenticated;
   
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -227,6 +230,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         muted={isMuted}
         onClick={handleVideoClick}
         playsInline
+        style={isBlurred ? { filter: 'blur(28px)', pointerEvents: 'none' } : {}}
         onTimeUpdate={(e) => {
           const v = e.target;
           if (v.duration) setReelProgress((v.currentTime / v.duration) * 100);
@@ -236,6 +240,53 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           }
         }}
       />
+
+      {/* 18+ Guest Warning Blur Overlay */}
+      {isBlurred && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setNsfwRevealed(true);
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 30,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(12px)',
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            textAlign: 'center',
+            padding: '24px',
+          }}
+        >
+          <div style={{ color: '#ef4444', fontWeight: 700, fontSize: '20px', marginBottom: '8px' }}>
+            🔞 18+ Content Warning
+          </div>
+          <div style={{ color: '#eee', fontSize: '13px', marginBottom: '18px', maxWidth: '260px' }}>
+            This snip contains mature content. Tap to view.
+          </div>
+          <button
+            style={{
+              padding: '10px 24px',
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '24px',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
+            }}
+          >
+            Tap to view (18+)
+          </button>
+        </div>
+      )}
 
       {/* Play/Pause center overlay */}
       {!isPlaying && (
