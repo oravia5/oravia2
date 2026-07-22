@@ -117,7 +117,13 @@ router.get('/profile/:username', async (req, res) => {
 
     const name = user.displayName || user.username || 'Oravia User';
     const title = `${name} (@${user.username}) | Oravia`;
-    const description = user.bio || `Check out ${name}'s profile on Oravia — Connecting Moments`;
+
+    // Query stats for rich social media cards
+    const postCount = await Post.countDocuments({ author: user._id, type: { $ne: 'reel' } });
+    const snipCount = await Post.countDocuments({ author: user._id, type: 'reel' });
+    const followerCount = user.followers ? user.followers.length : 0;
+    const statsStr = `📸 ${postCount} Posts • 🎬 ${snipCount} Snips • 👥 ${followerCount} Followers`;
+    const description = user.bio ? `${user.bio} | ${statsStr}` : `Check out ${name} on Oravia — ${statsStr}`;
 
     // Resolve avatar URL
     let imageUrl = user.avatarUrl || '';
