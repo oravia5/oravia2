@@ -491,7 +491,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
     }
   };
 
+  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
+
   const toggleVideoPlay = (e) => {
+    if (isBlurred) return;
     const video = e.target;
     if (isPlaying) {
       video.pause();
@@ -515,12 +518,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
     return `${diffDays}d ago`;
   };
 
-  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
-
   const mediaContainerStyle = {
     ...(mediaAspect ? { aspectRatio: mediaAspect } : {}),
-    ...(isBlurred ? { filter: 'blur(28px)', pointerEvents: 'none' } : {}),
     position: 'relative',
+    overflow: 'hidden',
   };
 
   return (
@@ -765,6 +766,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
                         onClick={() => toggleCarouselVideo(idx)}
                         className="post-video"
                         playsInline
+                        style={isBlurred ? { filter: 'blur(30px) scale(1.05)' } : {}}
                         onLoadedMetadata={(e) => {
                           const w = e.target.videoWidth;
                           const h = e.target.videoHeight;
@@ -781,19 +783,21 @@ export default function PostCard({ post, onDeleteSuccess }) {
                         }}
                         onTimeUpdate={(e) => handleCarouselTimeUpdate(idx, e)}
                       />
-                      {!videoPlayingStates[idx] && (
+                      {!videoPlayingStates[idx] && !isBlurred && (
                         <div className="play-overlay" onClick={() => toggleCarouselVideo(idx)}>
                           <Play size={40} className="play-icon" />
                         </div>
                       )}
-                      <button
-                        className="mute-btn"
-                        onClick={() => toggleCarouselMute(idx)}
-                        aria-label={videoMutedStates[idx] !== false ? 'Unmute' : 'Mute'}
-                      >
-                        <Volume2 size={16} color={(videoMutedStates[idx] !== undefined ? videoMutedStates[idx] : true) ? '#ef4444' : '#22c55e'} />
-                      </button>
-                      {videoPlayingStates[idx] && (
+                      {!isBlurred && (
+                        <button
+                          className="mute-btn"
+                          onClick={() => toggleCarouselMute(idx)}
+                          aria-label={videoMutedStates[idx] !== false ? 'Unmute' : 'Mute'}
+                        >
+                          <Volume2 size={16} color={(videoMutedStates[idx] !== undefined ? videoMutedStates[idx] : true) ? '#ef4444' : '#22c55e'} />
+                        </button>
+                      )}
+                      {videoPlayingStates[idx] && !isBlurred && (
                         <div
                           className="video-progress-hitzone"
                           onClick={(e) => {
