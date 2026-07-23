@@ -143,6 +143,7 @@ export default function CreatePost() {
   const [caption, setCaption] = useState(targetItem ? targetItem.caption : '');
   const [locationName, setLocationName] = useState(targetItem ? targetItem.location : '');
   const [isReel, setIsReel] = useState(targetItem ? targetItem.type === 'reel' : isReelMode);
+  const [isNSFW, setIsNSFW] = useState(targetItem ? Boolean(targetItem.isNSFW) : false);
   const [captureSource, setCaptureSource] = useState('gallery'); // 'gallery' or 'camera'
   
   // Products state (list of affiliate products)
@@ -513,6 +514,7 @@ export default function CreatePost() {
         formData.append('location', locationName);
         formData.append('album', finalAlbum);
         formData.append('status', statusVal);
+        formData.append('isNSFW', isNSFW ? 'true' : 'false');
 
         const productsData = products.map((prod) => {
           if (prod.imageFile) {
@@ -582,6 +584,7 @@ export default function CreatePost() {
     formData.append('type', type);
     formData.append('status', statusVal);
     formData.append('isReal', captureSource === 'camera' ? 'true' : 'false');
+    formData.append('isNSFW', isNSFW ? 'true' : 'false');
 
     if (finalAlbum) {
       formData.append('album', finalAlbum);

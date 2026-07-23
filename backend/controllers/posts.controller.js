@@ -440,6 +440,11 @@ export const createPost = async (req, res) => {
       parsedTags.push('real');
     }
 
+    const isNSFWFromReq = req.body.isNSFW === 'true' || req.body.isNSFW === true;
+    const adultKeywords = ['nsfw', '18plus', '18+', 'adult', 'hot', 'sexy', 'sensual', 'babe', 'boobs', 'bikini', 'lingerie', 'nude', 'models', 'expose', 'hottest', 'exotic'];
+    const autoNSFW = parsedTags.some(tag => adultKeywords.includes(tag.toLowerCase())) ||
+                     adultKeywords.some(kw => (caption || '').toLowerCase().includes(kw));
+
     const post = await Post.create({
       author: req.user._id,
       type,
@@ -453,6 +458,7 @@ export const createPost = async (req, res) => {
       tags: parsedTags,
       status: status || 'published',
       isReal,
+      isNSFW: isNSFWFromReq || autoNSFW,
     });
 
     const populatedPost = await Post.findById(post._id).populate(
@@ -1209,8 +1215,10 @@ export const updatePost = async (req, res) => {
     }
     if (location !== undefined) post.location = location;
     if (album !== undefined) post.album = album ? album.trim() : '';
-    if (status !== undefined) post.status = status;
     if (isArchived !== undefined) post.isArchived = isArchived;
+    if (req.body.isNSFW !== undefined) {
+      post.isNSFW = req.body.isNSFW === 'true' || req.body.isNSFW === true;
+    }
     
     if (products !== undefined) {
       let parsedProducts = [];
