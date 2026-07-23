@@ -23,6 +23,17 @@ const conversationSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    lastSender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    unreadBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     timestamps: true,

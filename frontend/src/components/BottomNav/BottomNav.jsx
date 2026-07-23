@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, unreadChatCount } = useNotifications();
   const { isAuthenticated } = useAuth();
 
   const isActive = (path) => location.pathname === path;
@@ -49,7 +49,14 @@ export default function BottomNav() {
             onClick={() => navigate(isAuthenticated ? '/messages' : '/login')}
             aria-label="Messages"
           >
-            <MessageSquare size={22} />
+            <div className="bell-wrapper">
+              <MessageSquare size={22} />
+              {unreadChatCount > 0 && (
+                <span className="bell-badge">
+                  {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                </span>
+              )}
+            </div>
             <span>Messages</span>
           </button>
           

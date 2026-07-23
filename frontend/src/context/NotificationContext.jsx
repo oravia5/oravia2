@@ -12,15 +12,22 @@ export function NotificationProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const pollingRef = useRef(null);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const res = await client.get('/notifications/unread-count');
-      if (res.data.success) {
-        setUnreadCount(res.data.data.count);
+      const [notifRes, chatRes] = await Promise.allSettled([
+        client.get('/notifications/unread-count'),
+        client.get('/chat/unread-count'),
+      ]);
+      if (notifRes.status === 'fulfilled' && notifRes.value.data?.success) {
+        setUnreadCount(notifRes.value.data.data.count);
+      }
+      if (chatRes.status === 'fulfilled' && chatRes.value.data?.success) {
+        setUnreadChatCount(chatRes.value.data.count || 0);
       }
     } catch (err) {
       // silent
@@ -85,6 +92,8 @@ export function NotificationProvider({ children }) {
   const value = {
     notifications,
     unreadCount,
+    unreadChatCount,
+    setUnreadChatCount,
     loading,
     fetchNotifications,
     fetchUnreadCount,

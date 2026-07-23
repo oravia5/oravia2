@@ -33,6 +33,9 @@ export default function Messages() {
 
   useEffect(() => {
     fetchConversations();
+    // Poll conversations list every 4 seconds to catch new incoming messages in real-time
+    const interval = setInterval(fetchConversations, 4000);
+    return () => clearInterval(interval);
   }, [fetchConversations]);
 
   useEffect(() => {
@@ -62,11 +65,12 @@ export default function Messages() {
     setSearchQuery('');
     setSearchResults([]);
 
-    // Register this conversation in the backend so both users see it
+    // Register & mark read in backend
     try {
       await client.post('/chat/conversations', { otherUserId: user._id });
+      await client.put('/chat/mark-read', { channelId });
     } catch (err) {
-      console.error('Failed to register conversation:', err);
+      console.error('Failed to register/mark conversation read:', err);
     }
   }, []);
 
@@ -172,15 +176,18 @@ export default function Messages() {
               {conversations.map((conv) => (
                 <div
                   key={conv.channelId}
-                  className="chat-row-item"
+                  className={`chat-row-item ${conv.isUnread ? 'unread-item' : ''}`}
                   onClick={() => openChat(conv.channelId, conv.user)}
                 >
-                  <img src={conv.user.avatarUrl} alt="" className="chat-avatar" />
+                  <div className="avatar-wrap" style={{ position: 'relative' }}>
+                    <img src={conv.user.avatarUrl} alt="" className="chat-avatar" />
+                    {conv.isUnread && <span className="unread-dot" />}
+                  </div>
                   <div className="chat-content">
-                    <span className="chat-name">
+                    <span className="chat-name" style={{ fontWeight: conv.isUnread ? 700 : 500 }}>
                       {conv.user.displayName || conv.user.username}
                     </span>
-                    <span className="chat-subtext">
+                    <span className="chat-subtext" style={{ color: conv.isUnread ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: conv.isUnread ? 600 : 400 }}>
                       {conv.lastMessageText
                         ? conv.lastMessageText
                         : `@${conv.user.username}`}
@@ -199,6 +206,19 @@ export default function Messages() {
 }
 
 const msgPageStyles = `
+  .unread-dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #000;
+  }
+  .unread-item {
+    background: rgba(99, 102, 241, 0.05) !important;
+  }
   .messages-page-container {
     min-height: 100vh;
     background: #000;

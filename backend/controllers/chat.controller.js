@@ -98,6 +98,7 @@ export const startConversation = async (req, res) => {
     const participantIds = [userId, otherUserId].sort();
 
     // Upsert — create if not exists, update lastMessageAt if exists
+    // Also clear unreadBy for current user when they open the chat!
     await Conversation.findOneAndUpdate(
       { channelId },
       {
@@ -108,6 +109,7 @@ export const startConversation = async (req, res) => {
         $set: {
           lastMessageAt: new Date(),
         },
+        $pull: { unreadBy: userId },
       },
       { upsert: true, new: true }
     );
@@ -141,25 +143,36 @@ export const updateConversation = async (req, res) => {
       });
     }
 
+    // Find current conversation to get recipient ID
+    const existingConv = await Conversation.findOne({ channelId }).lean();
+    let recipientId = null;
+    if (existingConv && existingConv.participants) {
+      recipientId = existingConv.participants.find(
+        (p) => p.toString() !== senderId
+      );
+    }
+
+    const updateOps = {
+      $set: {
+        lastMessageAt: new Date(),
+        lastMessageText: (lastMessageText || '').substring(0, 100),
+        lastSender: senderId,
+      },
+    };
+
+    if (recipientId) {
+      updateOps.$addToSet = { unreadBy: recipientId };
+    }
+
     const conversation = await Conversation.findOneAndUpdate(
       { channelId },
-      {
-        $set: {
-          lastMessageAt: new Date(),
-          lastMessageText: (lastMessageText || '').substring(0, 100),
-        },
-      },
+      updateOps,
       { new: true }
     );
 
     // ASYNC PUSH NOTIFICATION FOR DIRECT CHAT MESSAGES
     setImmediate(async () => {
       try {
-        if (!conversation || !conversation.participants) return;
-        const recipientId = conversation.participants.find(
-          (p) => p.toString() !== senderId
-        );
-
         if (!recipientId) return;
 
         const senderUser = req.user;
@@ -168,7 +181,7 @@ export const updateConversation = async (req, res) => {
         sendPushNotification(recipientId, {
           title: senderName,
           body: lastMessageText || 'Sent you a message 💬',
-          icon: senderUser.avatarUrl || 'https://oravia.co.in/icon-192x192.png', // Sender's profile picture
+          icon: senderUser.avatarUrl || 'https://oravia.co.in/icon-192x192.png',
           url: 'https://oravia.co.in/messages',
         });
       } catch (pushErr) {
@@ -183,6 +196,40 @@ export const updateConversation = async (req, res) => {
       success: false,
       message: 'Failed to update conversation',
     });
+  }
+};
+
+// Mark conversation as read by current user
+export const markConversationRead = async (req, res) => {
+  try {
+    const { channelId } = req.body;
+    const userId = req.user._id;
+
+    if (channelId) {
+      await Conversation.findOneAndUpdate(
+        { channelId },
+        { $pull: { unreadBy: userId } }
+      );
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking conversation read:', error);
+    res.status(500).json({ success: false, message: 'Failed to mark conversation read' });
+  }
+};
+
+// Get total unread chat conversations count for current user
+export const getUnreadChatCount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const count = await Conversation.countDocuments({
+      participants: userId,
+      unreadBy: userId,
+    });
+    res.json({ success: true, count });
+  } catch (error) {
+    console.error('Error getting unread chat count:', error);
+    res.status(500).json({ success: false, count: 0 });
   }
 };
 
@@ -220,10 +267,13 @@ export const getConversations = async (req, res) => {
         const user = usersMap[otherUserId?.toString()];
         if (!user) return null;
 
+        const isUnread = conv.unreadBy && conv.unreadBy.some(id => id.toString() === userId);
+
         return {
           channelId: conv.channelId,
           lastMessageAt: conv.lastMessageAt,
           lastMessageText: conv.lastMessageText,
+          isUnread,
           user: {
             _id: user._id,
             username: user.username,
