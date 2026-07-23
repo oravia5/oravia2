@@ -87,6 +87,31 @@ router.get('/post/:id', async (req, res) => {
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${imageUrl}" />
 
+    <!-- Schema.org Structured Data for Google Images & Video Search -->
+    <script type="application/ld+json">
+    ${post.type === 'video' || post.type === 'reel' ? JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": title,
+      "description": description,
+      "thumbnailUrl": [imageUrl],
+      "uploadDate": post.createdAt ? post.createdAt.toISOString() : new Date().toISOString(),
+      "contentUrl": post.mediaUrl.startsWith('/uploads/') ? `https://oravia.co.in${post.mediaUrl}` : post.mediaUrl,
+      "embedUrl": canonicalUrl
+    }) : JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ImageObject",
+      "contentUrl": imageUrl,
+      "url": canonicalUrl,
+      "name": title,
+      "description": description,
+      "author": {
+        "@type": "Person",
+        "name": authorName
+      }
+    })}
+    </script>
+
     <!-- Redirect real users to the SPA -->
     <meta http-equiv="refresh" content="0;url=${canonicalUrl}" />
 </head>
