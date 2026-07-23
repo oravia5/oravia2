@@ -1040,7 +1040,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
                         </span>
                       </div>
                       <span style={{ fontSize: '9px', color: '#22c55e', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px', marginTop: '2px' }}>
-                        <Download size={9} /> {downloadCnt} downloads
+                        <Download size={9} /> {downloadCnt}
                       </span>
                     </div>
                   ) : (
