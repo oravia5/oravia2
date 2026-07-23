@@ -419,8 +419,17 @@ export const createPost = async (req, res) => {
 
       // Digital asset file mapping
       if (prod.hasDigitalFile && assetIndex < productAssetFiles.length) {
-        prod.fileUrl = await StorageService.uploadFile(productAssetFiles[assetIndex], 'posts/products');
-        prod.fileName = productAssetFiles[assetIndex].originalname;
+        const fileObj = productAssetFiles[assetIndex];
+        prod.fileUrl = await StorageService.uploadFile(fileObj, 'posts/products');
+        prod.fileName = fileObj.originalname;
+        if (!prod.fileSize) {
+          const mb = (fileObj.size / (1024 * 1024)).toFixed(1);
+          prod.fileSize = `${mb} MB`;
+        }
+        if (!prod.fileType) {
+          const ext = fileObj.originalname.split('.').pop().toUpperCase();
+          prod.fileType = ext;
+        }
         assetIndex++;
       } else {
         prod.fileUrl = prod.fileUrl || '';
@@ -429,6 +438,10 @@ export const createPost = async (req, res) => {
       delete prod.hasDigitalFile;
 
       prod.originalPrice = prod.originalPrice || '';
+      prod.currency = prod.currency || '₹';
+      prod.fileSize = prod.fileSize || '';
+      prod.fileType = prod.fileType || '';
+      prod.requireFollow = !!prod.requireFollow;
       processedProducts.push(prod);
     }
 
@@ -1257,8 +1270,17 @@ export const updatePost = async (req, res) => {
 
         // Digital asset file mapping
         if (prod.hasDigitalFile && assetIndex < productAssetFiles.length) {
-          prod.fileUrl = await StorageService.uploadFile(productAssetFiles[assetIndex], 'posts/products');
-          prod.fileName = productAssetFiles[assetIndex].originalname;
+          const fileObj = productAssetFiles[assetIndex];
+          prod.fileUrl = await StorageService.uploadFile(fileObj, 'posts/products');
+          prod.fileName = fileObj.originalname;
+          if (!prod.fileSize) {
+            const mb = (fileObj.size / (1024 * 1024)).toFixed(1);
+            prod.fileSize = `${mb} MB`;
+          }
+          if (!prod.fileType) {
+            const ext = fileObj.originalname.split('.').pop().toUpperCase();
+            prod.fileType = ext;
+          }
           assetIndex++;
         } else {
           prod.fileUrl = prod.fileUrl || '';
@@ -1267,6 +1289,10 @@ export const updatePost = async (req, res) => {
         delete prod.hasDigitalFile;
 
         prod.originalPrice = prod.originalPrice || '';
+        prod.currency = prod.currency || '₹';
+        prod.fileSize = prod.fileSize || '';
+        prod.fileType = prod.fileType || '';
+        prod.requireFollow = !!prod.requireFollow;
         processedProducts.push(prod);
       }
       post.products = processedProducts;
@@ -1350,5 +1376,38 @@ export const unarchivePost = async (req, res) => {
   } catch (error) {
     console.error('Unarchive post error:', error);
     res.status(500).json({ success: false, message: 'Server error unarchiving post' });
+  }
+};
+
+/**
+ * @desc    Increment download count for a product in a post
+ * @route   POST /api/posts/:id/products/:productId/download
+ * @access  Public
+ */
+export const trackProductDownload = async (req, res) => {
+  try {
+    const { id, productId } = req.params;
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    const prod = post.products.id(productId);
+    if (!prod) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    prod.downloadCount = (prod.downloadCount || 0) + 1;
+    await post.save();
+
+    res.json({
+      success: true,
+      downloadCount: prod.downloadCount,
+      fileUrl: prod.fileUrl,
+    });
+  } catch (error) {
+    console.error('Track product download error:', error);
+    res.status(500).json({ success: false, message: 'Server error tracking download' });
   }
 };

@@ -358,8 +358,12 @@ export default function CreatePost() {
     const file = e.target.files[0];
     if (file) {
       const updated = [...products];
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      const ext = file.name.split('.').pop().toUpperCase();
       updated[idx].digitalFile = file;
       updated[idx].digitalFileName = file.name;
+      updated[idx].fileSize = `${mb} MB`;
+      updated[idx].fileType = ext;
       setProducts(updated);
     }
   };
@@ -368,6 +372,8 @@ export default function CreatePost() {
     const updated = [...products];
     updated[idx].digitalFile = null;
     updated[idx].digitalFileName = '';
+    updated[idx].fileSize = '';
+    updated[idx].fileType = '';
     setProducts(updated);
   };
 
@@ -513,6 +519,9 @@ export default function CreatePost() {
             obj.hasDigitalFile = !!prod.digitalFile;
             obj.fileUrl = prod.fileUrl || '';
             obj.fileName = prod.fileName || '';
+            obj.fileSize = prod.fileSize || '';
+            obj.fileType = prod.fileType || '';
+            obj.requireFollow = !!prod.requireFollow;
           }
           return obj;
         });
@@ -584,6 +593,9 @@ export default function CreatePost() {
         obj.hasDigitalFile = !!prod.digitalFile;
         obj.fileUrl = prod.fileUrl || '';
         obj.fileName = prod.fileName || '';
+        obj.fileSize = prod.fileSize || '';
+        obj.fileType = prod.fileType || '';
+        obj.requireFollow = !!prod.requireFollow;
       }
       return obj;
     });
@@ -1233,7 +1245,7 @@ export default function CreatePost() {
 
                             {item.type === 'downloadable' && (
                               <>
-                                <div className="digital-file-upload-row" style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div className="digital-file-upload-row" style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                                   <button
                                     type="button"
                                     onClick={() => document.getElementById(`prod-file-${idx}`).click()}
@@ -1262,6 +1274,28 @@ export default function CreatePost() {
                                   )}
                                 </div>
                                 {errs.file && <p className="prod-field-error" style={{ marginTop: '4px' }}>{errs.file}</p>}
+
+                                {(item.fileType || item.fileSize) && (
+                                  <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-indigo)', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', padding: '2px 8px', borderRadius: '12px' }}>
+                                      {item.fileType || 'FILE'} • {item.fileSize}
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '8px 12px' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#ffffff' }}>🔒 Require Follow to Download</span>
+                                    <span style={{ fontSize: '10px', color: '#a1a1aa' }}>Visitors must follow you to unlock this free download</span>
+                                  </div>
+                                  <input
+                                    type="checkbox"
+                                    checked={!!item.requireFollow}
+                                    onChange={(e) => handleProductInputChange(idx, 'requireFollow', e.target.checked)}
+                                    style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--accent-indigo)' }}
+                                    disabled={uploading}
+                                  />
+                                </div>
                               </>
                             )}
 

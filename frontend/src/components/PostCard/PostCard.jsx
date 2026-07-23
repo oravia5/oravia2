@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { queueView } from '../../utils/viewTracker';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle, Tag } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle, Tag, Lock, UserPlus, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -87,6 +87,68 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with posts');
+  const [previewFileModal, setPreviewFileModal] = useState(null);
+  const [followUnlockModal, setFollowUnlockModal] = useState(null);
+  const [productDownloadCounts, setProductDownloadCounts] = useState({});
+  const [isFollowingAuthorState, setIsFollowingAuthorState] = useState(
+    user && post.author && (user.following || []).some(id => id.toString() === post.author._id.toString())
+  );
+
+  const handleDownloadFileClick = async (prod, e) => {
+    if (e) e.stopPropagation();
+    
+    // Check follow-to-unlock constraint
+    const isSelf = user && post.author && user._id.toString() === post.author._id.toString();
+    const isFollowing = isSelf || isFollowingAuthorState || (
+      user && post.author && (user.following || []).some(id => id.toString() === post.author._id.toString())
+    );
+
+    if (prod.requireFollow && !isFollowing) {
+      setFollowUnlockModal(prod);
+      return;
+    }
+
+    // Trigger download & increment counter
+    try {
+      const res = await client.post(`/posts/${post._id}/products/${prod._id}/download`);
+      if (res.data.success) {
+        setProductDownloadCounts(prev => ({
+          ...prev,
+          [prod._id]: res.data.downloadCount
+        }));
+        const fileUrl = res.data.fileUrl || prod.fileUrl;
+        if (fileUrl) {
+          window.open(getFullMediaUrl(fileUrl), '_blank', 'noopener,noreferrer');
+        }
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      if (prod.fileUrl) {
+        window.open(getFullMediaUrl(prod.fileUrl), '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
+  const handleFollowAndDownload = async () => {
+    if (!isAuthenticated) {
+      setDrawerAction('follow creators to unlock free downloads');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
+    try {
+      if (post.author?._id) {
+        await client.post(`/users/${post.author._id}/follow`);
+        setIsFollowingAuthorState(true);
+      }
+      const prodToDownload = followUnlockModal;
+      setFollowUnlockModal(null);
+      if (prodToDownload) {
+        handleDownloadFileClick(prodToDownload);
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+    }
+  };
 
   const handleProductWishlistToggle = async (productId, e) => {
     if (e) e.stopPropagation();
@@ -884,11 +946,19 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
             const handleCardClick = () => {
               if (prod.fileUrl) {
-                window.open(getFullMediaUrl(prod.fileUrl), '_blank', 'noopener,noreferrer');
+                handleDownloadFileClick(prod);
               } else if (primaryLink) {
                 window.open(primaryLink, '_blank', 'noopener,noreferrer');
               }
             };
+
+            const downloadCnt = productDownloadCounts[prod._id] !== undefined 
+              ? productDownloadCounts[prod._id] 
+              : (prod.downloadCount || 0);
+
+            const isPDF = prod.fileType === 'PDF' || (prod.fileName && prod.fileName.toLowerCase().endsWith('.pdf'));
+            const isImageFile = prod.fileType === 'PNG' || prod.fileType === 'JPG' || prod.fileType === 'JPEG' || prod.fileType === 'WEBP';
+            const canPreview = isDownload && (isPDF || isImageFile);
 
             return (
               <div 
@@ -951,7 +1021,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
                     }}
                   >
                     {prod.fileUrl ? (
-                      <Download size={18} color="#71717a" />
+                      prod.requireFollow ? <Lock size={18} color="#eab308" /> : <Download size={18} color="#22c55e" />
                     ) : (
                       <ShoppingBag size={18} color="#71717a" />
                     )}
@@ -961,7 +1031,19 @@ export default function PostCard({ post, onDeleteSuccess }) {
                 {/* Text Info */}
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <p style={{ fontSize: '11px', fontWeight: '600', color: '#e4e4e7', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prod.title}</p>
-                  {!prod.fileUrl && (
+                  
+                  {prod.fileUrl ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '9px', fontWeight: '700', color: 'var(--accent-indigo)', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', padding: '0px 4px', borderRadius: '4px' }}>
+                          {prod.fileType || 'FILE'}{prod.fileSize ? ` • ${prod.fileSize}` : ''}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '9px', color: '#22c55e', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px', marginTop: '2px' }}>
+                        <Download size={9} /> {downloadCnt} downloads
+                      </span>
+                    </div>
+                  ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '12px', fontWeight: '700', color: prod.price === 'FREE' ? '#22c55e' : 'var(--accent-indigo)' }}>
                         {prod.price}
@@ -1008,33 +1090,55 @@ export default function PostCard({ post, onDeleteSuccess }) {
                   )}
                 </div>
 
-                {/* Wishlist Heart — far right, independent click */}
-                <button
-                  type="button"
-                  onClick={(e) => handleProductWishlistToggle(prod._id, e)}
-                  style={{
-                    flexShrink: 0,
-                    background: 'none',
-                    border: 'none',
-                    padding: '4px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: isProductSaved ? '#f43f5e' : '#3f3f46',
-                    cursor: 'pointer',
-                    transition: 'color 0.15s ease'
-                  }}
-                  title={isProductSaved ? "Remove from Wishlist" : "Save to Wishlist"}
-                >
-                  <Heart size={14} fill={isProductSaved ? '#f43f5e' : 'none'} />
-                </button>
+                {/* Right Action Icons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                  {canPreview && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewFileModal(prod);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#a1a1aa',
+                        cursor: 'pointer',
+                      }}
+                      title="Preview file"
+                    >
+                      <Eye size={13} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => handleProductWishlistToggle(prod._id, e)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isProductSaved ? '#f43f5e' : '#3f3f46',
+                      cursor: 'pointer',
+                      transition: 'color 0.15s ease'
+                    }}
+                    title={isProductSaved ? "Remove from Wishlist" : "Save to Wishlist"}
+                  >
+                    <Heart size={14} fill={isProductSaved ? '#f43f5e' : 'none'} />
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Interactions Action Bar */}
       <div className="post-actions">
         <div className="actions-left">
           <button 
@@ -1536,6 +1640,138 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
       {/* Inline edit post modal removed, routing to standalone CreatePost page instead */}
       
+      {/* ── Follow to Unlock Modal ── */}
+      {followUnlockModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#121215',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '340px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.8)'
+          }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <Lock size={22} color="#eab308" />
+            </div>
+            <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: '0 0 6px' }}>Follow to Unlock Download</h4>
+            <p style={{ fontSize: '13px', color: '#a1a1aa', margin: '0 0 16px', lineHeight: '1.4' }}>
+              Follow <strong>@{post.author?.username}</strong> to instantly unlock and download <strong>{followUnlockModal.title}</strong> for free!
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setFollowUnlockModal(null)}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleFollowAndDownload}
+                style={{ flex: 1.4, padding: '10px', borderRadius: '8px', background: 'var(--accent-indigo)', border: 'none', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <UserPlus size={14} />
+                <span>Follow & Download</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── File Preview Modal ── */}
+      {previewFileModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#0d0d10',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '16px',
+            maxWidth: '560px',
+            width: '100%',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.9)'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#121216' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-indigo)', background: 'rgba(99,102,241,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                  {previewFileModal.fileType || 'FILE'}
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {previewFileModal.title}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewFileModal(null)}
+                style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body Preview */}
+            <div style={{ flex: 1, minHeight: '300px', background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {previewFileModal.fileType === 'PDF' || (previewFileModal.fileName && previewFileModal.fileName.toLowerCase().endsWith('.pdf')) ? (
+                <iframe
+                  src={getFullMediaUrl(previewFileModal.fileUrl)}
+                  title="PDF Preview"
+                  style={{ width: '100%', height: '400px', border: 'none' }}
+                />
+              ) : (
+                <img
+                  src={getFullMediaUrl(previewFileModal.fileUrl)}
+                  alt="File Preview"
+                  style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                />
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', background: '#121216' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const prod = previewFileModal;
+                  setPreviewFileModal(null);
+                  handleDownloadFileClick(prod);
+                }}
+                style={{ background: 'var(--accent-indigo)', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Download size={14} />
+                <span>Download File ({previewFileModal.fileSize || 'Free'})</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <AuthDrawer 
         isOpen={isAuthDrawerOpen} 
         onClose={() => setIsAuthDrawerOpen(false)} 

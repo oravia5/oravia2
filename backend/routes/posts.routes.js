@@ -21,6 +21,7 @@ import {
   archivePost,
   unarchivePost,
   batchIncrementViews,
+  trackProductDownload,
 } from '../controllers/posts.controller.js';
 import { protect, optionalAuth } from '../middleware/auth.middleware.js';
 import { validateUploadLimit, postUpload } from '../middleware/upload.middleware.js';
@@ -28,6 +29,7 @@ import { validateUploadLimit, postUpload } from '../middleware/upload.middleware
 const router = express.Router();
 
 router.post('/views/batch', batchIncrementViews);
+router.post('/:id/products/:productId/download', trackProductDownload);
 router.get('/', optionalAuth, getPosts);
 router.get('/feed', optionalAuth, getFeed);
 router.get('/following', protect, getFollowingFeed);

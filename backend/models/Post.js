@@ -55,9 +55,14 @@ const postSchema = new mongoose.Schema(
         link: { type: String, default: '' },
         price: { type: String, default: '' },
         originalPrice: { type: String, default: '' },
+        currency: { type: String, default: '₹' },
         imageUrl: { type: String, default: '' },
         fileUrl: { type: String, default: '' },
         fileName: { type: String, default: '' },
+        fileSize: { type: String, default: '' },
+        fileType: { type: String, default: '' },
+        downloadCount: { type: Number, default: 0 },
+        requireFollow: { type: Boolean, default: false },
       }
     ],
     album: {
