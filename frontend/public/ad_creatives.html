@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oravia - High Converting Facebook & Instagram Ad Creatives</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 50px;
+    }
+    .header-text {
+      text-align: center;
+      max-width: 600px;
+    }
+    .header-text h1 {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .header-text p {
+      color: #a1a1aa;
+      font-size: 15px;
+    }
+    .creatives-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+      align-items: center;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* Ad Canvas 1080x1080 Aspect Ratio (600x600 Display) */
+    .ad-card {
+      width: 100%;
+      aspect-ratio: 1/1;
+      background: #121215;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    /* Glow Effects */
+    .ad-card::before {
+      content: '';
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      filter: blur(80px);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .ad-1::before {
+      top: -50px;
+      right: -50px;
+      background: rgba(168, 85, 247, 0.25);
+    }
+    .ad-2::before {
+      top: -50px;
+      left: -50px;
+      background: rgba(249, 115, 22, 0.25);
+    }
+    .ad-3::before {
+      bottom: -50px;
+      right: -50px;
+      background: rgba(99, 102, 241, 0.25);
+    }
+
+    .ad-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 2;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .brand-logo svg {
+      color: #a855f7;
+    }
+    .badge-tag {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #d4d4d8;
+    }
+
+    .ad-middle {
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      margin: auto 0;
+    }
+    .main-hook {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: #ffffff;
+    }
+    .sub-hook {
+      font-size: 14px;
+      color: #a1a1aa;
+      max-width: 420px;
+    }
+
+    /* Feature Box 1: Shoppable Card */
+    .shoppable-card-preview {
+      background: rgba(24, 24, 27, 0.9);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      text-align: left;
+    }
+    .prod-img {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+    .prod-info {
+      flex: 1;
+    }
+    .prod-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .prod-price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .prod-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: #22c55e;
+    }
+    .prod-mrp {
+      font-size: 12px;
+      color: #71717a;
+      text-decoration: line-through;
+    }
+    .prod-badge {
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .buy-btn {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Feature Box 2: REAL Live Camera */
+    .real-badge-preview {
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.4);
+      color: #fb923c;
+      padding: 10px 20px;
+      border-radius: 100px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+    }
+    .real-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f97316;
+      box-shadow: 0 0 8px #f97316;
+    }
+
+    /* Feature Box 3: All In One */
+    .freedom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .grid-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #e4e4e7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ad-bottom {
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.03);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      margin: 0 -28px -28px -28px;
+      padding: 16px 28px;
+    }
+    .cta-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #a1a1aa;
+    }
+    .cta-btn {
+      background: #ffffff;
+      color: #09090b;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-text">
+    <h1>Oravia High-Converting FB & IG Ad Creatives</h1>
+    <p>3 Ready-to-Use 1080x1080 Ad Designs with Official Oravia Logo & Features</p>
+  </div>
+
+  <div class="creatives-grid">
+
+    <!-- AD CREATIVE 1: SHOPPABLE SOCIAL FEED -->
+    <div class="ad-card ad-1">
+      <div class="ad-top">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 50 14 A 36 36 0 1 1 50 86 A 36 36 0 1 1 50 14 Z" stroke="#a855f7" stroke-width="8" />
+            <circle cx="73" cy="27" r="9" fill="#a855f7" />
+            <circle cx="68" cy="72" r="7" fill="#a855f7" />
+            <circle cx="26" cy="50" r="5" fill="#a855f7" />
+          </svg>
+          ORAVIA
+        </div>
+        <span class="badge-tag">🛍️ SHOPPABLE FEED</span>
+      </div>
+
+      <div class="ad-middle">
+        <h2 class="main-hook">Social Media Par Sirf Likes Kyun?<br><span style="color: #c084fc;">Post & Reel Se Direct Earn Karo!</span></h2>
+        <p class="sub-hook">Add shoppable products or affiliate deals inside your posts & snips instantly.</p>
+
+        <div class="shoppable-card-preview">
+          <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150" alt="Sneaker" class="prod-img">
+          <div class="prod-info">
+            <div class="prod-title">Nike Air Max Edition</div>
+            <div class="prod-price-row">
+              <span class="prod-price">₹1,499</span>
+              <span class="prod-mrp">₹2,999</span>
+              <span class="prod-badge">50% OFF</span>
+            </div>
+          </div>
+          <button class="buy-btn">Buy Deal</button>
+        </div>
+      </div>
+
+      <div class="ad-bottom">
+        <span class="cta-text">Start Earning From Your Content</span>
+        <button class="cta-btn">Join Oravia</button>
+      </div>
+    </div>
+
+    <!-- AD CREATIVE 2: REAL LIVE CAMERA CAPTURE -->
+    <div class="ad-card ad-2">
+      <div class="ad-top">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 50 14 A 36 36 0 1 1 50 86 A 36 36 0 1 1 50 14 Z" stroke="#f97316" stroke-width="8" />
+            <circle cx="73" cy="27" r="9" fill="#f97316" />
+            <circle cx="68" cy="72" r="7" fill="#f97316" />
+            <circle cx="26" cy="50" r="5" fill="#f97316" />
+          </svg>
+          ORAVIA
+        </div>
+        <span class="badge-tag">📷 100% AUTHENTIC</span>
+      </div>
+
+      <div class="ad-middle">
+        <div class="real-badge-preview">
+          <span class="real-dot"></span>
+          REAL • VERIFIED LIVE CAPTURE
+        </div>
+        <h2 class="main-hook" style="margin-top: 10px;">No Fake Edits. No Copied Posts.<br><span style="color: #fb923c;">100% Real Authentic Moments!</span></h2>
+        <p class="sub-hook">Build 10x trust with your audience using Oravia's verified camera capture system.</p>
+      </div>
+
+      <div class="ad-bottom">
+        <span class="cta-text">Experience Authentic Social Media</span>
+        <button class="cta-btn" style="background: #f97316; color: #fff;">Explore Oravia</button>
+      </div>
+    </div>
+
+    <!-- AD CREATIVE 3: ULTIMATE FREEDOM -->
+    <div class="ad-card ad-3">
+      <div class="ad-top">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 50 14 A 36 36 0 1 1 50 86 A 36 36 0 1 1 50 14 Z" stroke="#6366f1" stroke-width="8" />
+            <circle cx="73" cy="27" r="9" fill="#6366f1" />
+            <circle cx="68" cy="72" r="7" fill="#6366f1" />
+            <circle cx="26" cy="50" r="5" fill="#6366f1" />
+          </svg>
+          ORAVIA
+        </div>
+        <span class="badge-tag">🚀 ALL-IN-ONE PLATFORM</span>
+      </div>
+
+      <div class="ad-middle">
+        <h2 class="main-hook">Photos, Vertical Reels, PDFs & Digital Files<br><span style="color: #818cf8;">Share Anything on Oravia!</span></h2>
+        <p class="sub-hook">No need for multiple apps. Express yourself with complete freedom.</p>
+
+        <div class="freedom-grid">
+          <div class="grid-item">📸 Photo Galleries</div>
+          <div class="grid-item">🎬 Vertical Snips</div>
+          <div class="grid-item">📄 PDF & Notes</div>
+          <div class="grid-item">🛍️ Shoppable Products</div>
+        </div>
+      </div>
+
+      <div class="ad-bottom">
+        <span class="cta-text">Download Oravia App Free</span>
+        <button class="cta-btn" style="background: #6366f1; color: #fff;">Get Started</button>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
