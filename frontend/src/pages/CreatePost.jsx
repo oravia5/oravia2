@@ -200,12 +200,20 @@ export default function CreatePost() {
 
 
   const checkIsVideo = (url, idx) => {
+    if (isReel) return true;
     if (url.startsWith('blob:')) {
       const file = selectedFiles[idx];
-      return !!(file && file.type.startsWith('video/'));
+      if (file) {
+        if (file.type && (file.type.startsWith('video/') || file.type.includes('video'))) return true;
+        const name = (file.name || '').toLowerCase();
+        if (['.mp4', '.mov', '.3gp', '.webm', '.mkv', '.avi', '.m4v', '.ts'].some(ext => name.endsWith(ext))) {
+          return true;
+        }
+      }
+      return false;
     }
     const lower = url.toLowerCase();
-    if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.mkv')) {
+    if (['.mp4', '.mov', '.3gp', '.webm', '.mkv', '.avi', '.m4v', '.ts'].some(ext => lower.endsWith(ext))) {
       return true;
     }
     if (targetItem) {
@@ -254,27 +262,42 @@ export default function CreatePost() {
       if (captureSource === 'camera') {
         const file = files[0];
         if (file) {
+          if (isReel) {
+            const isVid = (file.type && file.type.startsWith('video/')) || 
+              ['.mp4', '.mov', '.3gp', '.webm', '.mkv', '.avi'].some(ext => (file.name || '').toLowerCase().endsWith(ext));
+            if (!isVid && file.type && file.type.startsWith('image/')) {
+              setError('Snips require a video recording. Please record or select a video.');
+              if (e.target) e.target.value = '';
+              return;
+            }
+          }
           setSelectedFiles([file]);
           setPreviewUrls([URL.createObjectURL(file)]);
           setError('');
         }
+        if (e.target) e.target.value = '';
         return;
       }
 
       if (isReel) {
-        const videoFile = files.find(f => f.type.startsWith('video/'));
+        const videoFile = files.find(f => 
+          (f.type && f.type.startsWith('video/')) || 
+          ['.mp4', '.mov', '.3gp', '.webm', '.mkv', '.avi'].some(ext => (f.name || '').toLowerCase().endsWith(ext))
+        );
         if (videoFile) {
           setSelectedFiles([videoFile]);
           setPreviewUrls([URL.createObjectURL(videoFile)]);
           setError('');
         } else {
-          setError('Please upload a video file for Snips.');
+          setError('Please select a video file for Snips.');
         }
+        if (e.target) e.target.value = '';
         return;
       }
 
       if (selectedFiles.length + files.length > 10) {
         setError('You can upload a maximum of 10 media files.');
+        if (e.target) e.target.value = '';
         return;
       }
 
@@ -283,6 +306,7 @@ export default function CreatePost() {
       setPreviewUrls(prev => [...prev, ...newPreviews]);
       setError('');
     }
+    if (e.target) e.target.value = '';
   };
 
   const handleRemoveFile = (indexToRemove) => {
@@ -764,14 +788,14 @@ export default function CreatePost() {
                 );
               })}
               {!editPost && previewUrls.length < (captureSource === 'camera' ? 1 : 10) && (
-                <div className="add-more-media-card" onClick={() => fileInputRef.current.click()}>
+                <div className="add-more-media-card" onClick={() => { if (fileInputRef.current) { fileInputRef.current.value = ''; fileInputRef.current.click(); } }}>
                   <Plus size={24} />
                   <span>Add More</span>
                 </div>
               )}
             </div>
           ) : (
-            <div className="media-upload-placeholder" onClick={() => fileInputRef.current.click()}>
+            <div className="media-upload-placeholder" onClick={() => { if (fileInputRef.current) { fileInputRef.current.value = ''; fileInputRef.current.click(); } }}>
               <div className="placeholder-icons">
                 {isReel ? <Video size={28} /> : captureSource === 'camera' ? <Camera size={28} /> : <><Image size={28} /><Video size={28} /></>}
               </div>
@@ -783,7 +807,7 @@ export default function CreatePost() {
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileChange} 
-            accept={captureSource === 'camera' ? (isReel ? "video/*" : "image/*") : (isReel ? "video/*" : "image/*,video/*")} 
+            accept={isReel ? "video/*" : (captureSource === 'camera' ? "image/*,video/*" : "image/*,video/*")} 
             capture={captureSource === 'camera' ? "environment" : undefined}
             multiple={captureSource === 'camera' ? false : !isReel}
             style={{ display: 'none' }}

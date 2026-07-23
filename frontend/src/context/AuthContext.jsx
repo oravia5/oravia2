@@ -25,7 +25,11 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('Session validation failed:', error.message);
-          logout();
+          // Only force logout on explicit 401 Unauthorized token invalidation.
+          // Do not logout on transient network errors / returning from camera app.
+          if (error.response && error.response.status === 401) {
+            logout();
+          }
         }
       }
       setLoading(false);
