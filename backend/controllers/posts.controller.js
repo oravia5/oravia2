@@ -993,13 +993,8 @@ export const getPosts = async (req, res) => {
     const showNSFW = req.user ? req.user.showNSFW : false;
     const isOwnProfile = req.user && author && req.user._id.toString() === author.toString();
     const isProfileFetch = Boolean(author);
-    if (!showNSFW && !isOwnProfile && !isProfileFetch) {
-      if (req.user) {
-        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
-      } else {
-        query.isNSFW = { $ne: true };
-      }
-      query.moderationStatus = { $ne: 'pending' };
+    if (req.user && !showNSFW && !isOwnProfile && !isProfileFetch) {
+      query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
     }
 
     const posts = await Post.find(query)
