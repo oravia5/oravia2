@@ -41,3 +41,54 @@ export const readAllNotifications = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error marking all notifications as read' });
   }
 };
+
+export const getVapidPublicKey = (req, res) => {
+  res.json({ success: true, publicKey: process.env.VAPID_PUBLIC_KEY || '' });
+};
+
+export const subscribePush = async (req, res) => {
+  try {
+    const { subscription } = req.body;
+    if (!subscription || !subscription.endpoint || !subscription.keys) {
+      return res.status(400).json({ success: false, message: 'Invalid subscription payload' });
+    }
+
+    const user = req.user;
+    // Check if subscription already exists
+    const existingIndex = user.pushSubscriptions.findIndex(
+      (sub) => sub.endpoint === subscription.endpoint
+    );
+
+    if (existingIndex > -1) {
+      user.pushSubscriptions[existingIndex].keys = subscription.keys;
+    } else {
+      user.pushSubscriptions.push({
+        endpoint: subscription.endpoint,
+        keys: subscription.keys,
+      });
+    }
+
+    await user.save();
+    res.json({ success: true, message: 'Push subscription saved successfully' });
+  } catch (error) {
+    console.error('Error subscribing to push notifications:', error);
+    res.status(500).json({ success: false, message: 'Failed to subscribe to push notifications' });
+  }
+};
+
+export const unsubscribePush = async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (endpoint) {
+      req.user.pushSubscriptions = req.user.pushSubscriptions.filter(
+        (sub) => sub.endpoint !== endpoint
+      );
+      await req.user.save();
+    }
+    res.json({ success: true, message: 'Push subscription removed successfully' });
+  } catch (error) {
+    console.error('Error unsubscribing push notifications:', error);
+    res.status(500).json({ success: false, message: 'Failed to unsubscribe push notifications' });
+  }
+};
+

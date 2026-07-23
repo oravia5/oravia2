@@ -34,6 +34,7 @@ import ProfileShare from './pages/ProfileShare';
 // Reusable Components
 import BottomNav from './components/BottomNav/BottomNav';
 import UploadToast from './components/UploadToast/UploadToast';
+import { initPushNotifications } from './utils/pushManager';
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -77,6 +78,13 @@ const AdminRoute = ({ children }) => {
 const AppLayout = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
+
+  // Initialize Web Push Notifications when logged in
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      initPushNotifications().catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   // Scroll to top on route change
   React.useEffect(() => {

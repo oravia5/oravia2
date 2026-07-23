@@ -1,4 +1,6 @@
 import Notification from '../models/Notification.js';
+import User from '../models/User.js';
+import { sendPushNotification } from './pushNotification.service.js';
 
 export const createNotification = async ({ recipient, actor, type, post, comment }) => {
   if (!recipient || !actor || !type) {
@@ -10,6 +12,41 @@ export const createNotification = async ({ recipient, actor, type, post, comment
 
   try {
     const notification = await Notification.create({ recipient, actor, type, post, comment });
+
+    // ASYNC NON-BLOCKING PUSH NOTIFICATION (0ms impact on main DB response)
+    setImmediate(async () => {
+      try {
+        const actorUser = await User.findById(actor).select('displayName username avatarUrl');
+        const actorName = actorUser ? (actorUser.displayName || `@${actorUser.username}`) : 'Someone';
+
+        let title = 'Oravia';
+        let body = `${actorName} interacted with you`;
+        let targetUrl = 'https://oravia.co.in/notifications';
+
+        if (type === 'like') {
+          body = `${actorName} liked your post ❤️`;
+        } else if (type === 'comment') {
+          body = `${actorName} commented on your post 💬`;
+        } else if (type === 'follow') {
+          body = `${actorName} started following you 👤`;
+          targetUrl = `https://oravia.co.in/profile/${actorUser?.username || ''}`;
+        } else if (type === 'comment_like') {
+          body = `${actorName} liked your comment 👍`;
+        } else if (type === 'share') {
+          body = `${actorName} shared your post 🔄`;
+        }
+
+        sendPushNotification(recipient, {
+          title,
+          body,
+          icon: actorUser?.avatarUrl || 'https://oravia.co.in/icon-192x192.png',
+          url: targetUrl,
+        });
+      } catch (pushErr) {
+        console.error('Error triggering push notification:', pushErr.message);
+      }
+    });
+
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
