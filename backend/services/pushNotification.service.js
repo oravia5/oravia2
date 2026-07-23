@@ -36,11 +36,19 @@ export const sendPushNotification = (userId, notificationPayload) => {
         return;
       }
 
+      const formatUrl = (url, fallback) => {
+        if (!url) return fallback;
+        if (url.startsWith('http://') || url.startsWith('https://')) return url;
+        if (url.startsWith('/')) return `https://oravia.co.in${url}`;
+        return `https://oravia.co.in/${url}`;
+      };
+
       const payload = JSON.stringify({
         title: notificationPayload.title || 'Oravia',
         body: notificationPayload.body || 'You have a new notification!',
-        icon: notificationPayload.icon || 'https://oravia.co.in/icon-192x192.png',
-        url: notificationPayload.url || 'https://oravia.co.in/notifications',
+        icon: formatUrl(notificationPayload.icon, 'https://oravia.co.in/icon-192x192.png'),
+        image: notificationPayload.image ? formatUrl(notificationPayload.image, null) : null,
+        url: formatUrl(notificationPayload.url, 'https://oravia.co.in/notifications'),
         data: notificationPayload.data || {},
       });
 
