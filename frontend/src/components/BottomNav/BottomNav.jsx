@@ -2,11 +2,13 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Film, PlusSquare, User, MessageSquare } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { unreadCount } = useNotifications();
+  const { isAuthenticated } = useAuth();
 
   const isActive = (path) => location.pathname === path;
 
@@ -34,7 +36,7 @@ export default function BottomNav() {
           
           <button 
             className={`nav-item create-btn ${isActive('/create-post') ? 'active' : ''}`} 
-            onClick={() => navigate('/create-post')}
+            onClick={() => navigate(isAuthenticated ? '/create-post' : '/login')}
             aria-label="Create Post"
           >
             <div className="create-icon-wrapper">
@@ -44,7 +46,7 @@ export default function BottomNav() {
           
           <button 
             className={`nav-item ${isActive('/messages') ? 'active' : ''}`} 
-            onClick={() => navigate('/messages')}
+            onClick={() => navigate(isAuthenticated ? '/messages' : '/login')}
             aria-label="Messages"
           >
             <MessageSquare size={22} />
@@ -53,7 +55,7 @@ export default function BottomNav() {
           
           <button 
             className={`nav-item ${isActive('/profile') || location.pathname.startsWith('/profile/') ? 'active' : ''}`} 
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate(isAuthenticated ? '/profile' : '/login')}
             aria-label="Profile"
           >
             <User size={22} />
