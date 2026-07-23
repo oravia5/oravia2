@@ -21,8 +21,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
   const [nsfwRevealed, setNsfwRevealed] = useState(false);
 
-  const is18PlusConfirmedInSession = sessionStorage.getItem('oravia_18plus_confirmed') === 'true';
-  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && !isAuthenticated && !is18PlusConfirmedInSession;
+  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
   
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -71,10 +70,10 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const isLiked = likes.includes(user?._id);
   const isDisliked = dislikes.includes(user?._id);
 
-  // Play or pause based on active viewport state
+  // Play or pause based on active viewport state and NSFW blur
   useEffect(() => {
     if (videoRef.current) {
-      if (isActive) {
+      if (isActive && !isBlurred) {
         const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
         videoRef.current.muted = !soundEnabled;
         setIsMuted(!soundEnabled);
@@ -83,11 +82,10 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           .catch((err) => console.log('Autoplay block:', err.message));
       } else {
         videoRef.current.pause();
-        videoRef.current.currentTime = 0;
         setIsPlaying(false);
       }
     }
-  }, [isActive]);
+  }, [isActive, isBlurred]);
 
   const handleVideoClick = () => {
     if (showMenu) {
@@ -252,7 +250,6 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         <div
           onClick={(e) => {
             e.stopPropagation();
-            sessionStorage.setItem('oravia_18plus_confirmed', 'true');
             setNsfwRevealed(true);
           }}
           style={{

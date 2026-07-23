@@ -515,8 +515,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
     return `${diffDays}d ago`;
   };
 
-  const is18PlusConfirmedInSession = sessionStorage.getItem('oravia_18plus_confirmed') === 'true';
-  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && !isAuthenticated && !is18PlusConfirmedInSession;
+  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
 
   const mediaContainerStyle = {
     ...(mediaAspect ? { aspectRatio: mediaAspect } : {}),
@@ -605,6 +604,22 @@ export default function PostCard({ post, onDeleteSuccess }) {
               <span className="post-time-inline" style={{ color: 'var(--text-muted, #a1a1aa)', fontSize: '12px', fontWeight: '500' }}>
                 {formatTime(post.createdAt)}
               </span>
+              {post.isNSFW && (
+                <span style={{ 
+                  background: 'rgba(239, 68, 68, 0.15)', 
+                  color: '#ef4444', 
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '4px', 
+                  padding: '1px 5px', 
+                  fontSize: '10px', 
+                  fontWeight: '700',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  marginLeft: '4px'
+                }}>
+                  🔞 18+
+                </span>
+              )}
             </div>
             {currentLocation && (
               <Link to={`/location/${encodeURIComponent(currentLocation)}`} className="post-location-link">
@@ -698,15 +713,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
           <div
             onClick={(e) => {
               e.stopPropagation();
-              if (!isAuthenticated) {
-                if (sessionStorage.getItem('oravia_18plus_confirmed') === 'true') {
-                  setNsfwRevealed(true);
-                } else {
-                  setShowAgeGate(true);
-                }
-              } else {
-                setNsfwRevealed(true);
-              }
+              setNsfwRevealed(true);
             }}
             style={{
               position: 'absolute',
@@ -716,17 +723,18 @@ export default function PostCard({ post, onDeleteSuccess }) {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'rgba(0,0,0,0.55)',
+              background: 'rgba(0,0,0,0.65)',
+              backdropFilter: 'blur(20px)',
               cursor: 'pointer',
               pointerEvents: 'auto',
               textAlign: 'center',
               padding: '16px',
             }}
           >
-            <AlertCircle size={28} color="#fff" style={{ marginBottom: '8px' }} />
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: '15px' }}>Sensitive Content</div>
-            <div style={{ color: '#ddd', fontSize: '13px', marginTop: '4px' }}>This post may not be suitable for all audiences.</div>
-            <div style={{ color: '#fff', fontSize: '13px', marginTop: '10px', textDecoration: 'underline' }}>Tap to view (18+)</div>
+            <AlertCircle size={32} color="#ef4444" style={{ marginBottom: '8px' }} />
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: '16px' }}>🔞 18+ Sensitive Content</div>
+            <div style={{ color: '#ddd', fontSize: '13px', marginTop: '4px', maxWidth: '260px' }}>This post contains 18+ sensitive material. Tap to view.</div>
+            <div style={{ color: '#fff', fontSize: '13px', marginTop: '12px', background: '#ef4444', padding: '6px 16px', borderRadius: '20px', fontWeight: 600 }}>Tap to view (18+)</div>
           </div>
         )}
         {post.isReal && (
