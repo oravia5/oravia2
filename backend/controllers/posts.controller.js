@@ -47,7 +47,6 @@ export const getFeed = async (req, res) => {
       } else {
         query.isNSFW = { $ne: true };
       }
-      query.moderationStatus = { $ne: 'pending' };
     }
 
     if (cursor) {
@@ -1051,7 +1050,6 @@ export const getPostsByHashtag = async (req, res) => {
       } else {
         conditions.push({ isNSFW: { $ne: true } });
       }
-      conditions.push({ moderationStatus: { $ne: 'pending' } });
     }
 
     const query = { $and: conditions };
@@ -1095,7 +1093,6 @@ export const getPostsByLocation = async (req, res) => {
       } else {
         conditions.push({ isNSFW: { $ne: true } });
       }
-      conditions.push({ moderationStatus: { $ne: 'pending' } });
     }
 
     const query = { $and: conditions };
@@ -1152,7 +1149,6 @@ export const searchPosts = async (req, res) => {
       } else {
         postConditions.push({ isNSFW: { $ne: true } });
       }
-      postConditions.push({ moderationStatus: { $ne: 'pending' } });
     }
 
     const postQuery = { $and: postConditions };
