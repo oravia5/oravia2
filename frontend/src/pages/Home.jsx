@@ -23,7 +23,7 @@ export default function Home() {
   const { isAuthenticated } = useAuth();
   const [guestCityQuery, setGuestCityQuery] = useState('');
   const [tempCityInput, setTempCityInput] = useState('');
-  const displayFeed = isAuthenticated ? feedItems : feedItems.slice(0, 5);
+  const displayFeed = feedItems;
 
   const [nextCursor, setNextCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
@@ -137,7 +137,7 @@ export default function Home() {
   };
 
   const fetchMorePosts = async () => {
-    if (loadingMore || !hasMore || !nextCursor || !isAuthenticated) return;
+    if (loadingMore || !hasMore || !nextCursor) return;
     setLoadingMore(true);
     try {
       let endpoint = `/posts/feed?limit=10&cursor=${encodeURIComponent(nextCursor)}`;
@@ -164,7 +164,7 @@ export default function Home() {
   useEffect(() => {
     if (!loaderRef.current) return;
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !loadingMore && isAuthenticated) {
+      if (entries[0].isIntersecting && hasMore && !loadingMore) {
         fetchMorePosts();
       }
     }, { threshold: 0.5 });
@@ -175,7 +175,7 @@ export default function Home() {
         observer.unobserve(loaderRef.current);
       }
     };
-  }, [hasMore, nextCursor, loadingMore, isAuthenticated, activeTab, guestCityQuery]);
+  }, [hasMore, nextCursor, loadingMore, activeTab, guestCityQuery]);
 
   useEffect(() => {
     fetchFeed(activeTab);
@@ -344,21 +344,8 @@ export default function Home() {
               );
             })}
             
-            {/* Guest Scroll Limit Lock Paywall */}
-            {!isAuthenticated && feedItems.length > 5 && (
-              <div className="guest-feed-lock-card">
-                <div className="lock-graphic">🔒</div>
-                <h3>Create a free profile to see more posts</h3>
-                <p>Unlock the full timeline! Join the Oravia community to keep scrolling, follow creators, and discover local content.</p>
-                <div className="lock-cta-actions">
-                  <button className="btn-primary lock-btn" onClick={() => navigate('/login')}>Log In</button>
-                  <button className="lock-secondary-btn" onClick={() => navigate('/register')}>Sign Up</button>
-                </div>
-              </div>
-            )}
-
             {/* Infinite Scroll Loader marker */}
-            {isAuthenticated && hasMore && (
+            {hasMore && (
               <div ref={loaderRef} className="feed-loading-more-trigger">
                 <div className="spinner" style={{ width: '24px', height: '24px', margin: '20px auto' }}></div>
               </div>
