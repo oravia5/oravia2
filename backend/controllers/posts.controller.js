@@ -134,7 +134,6 @@ export const getFollowingFeed = async (req, res) => {
       } else {
         query.isNSFW = { $ne: true };
       }
-      query.moderationStatus = { $ne: 'pending' };
     }
 
     const posts = await Post.find(query)

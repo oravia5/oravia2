@@ -28,7 +28,6 @@ export const getReels = async (req, res) => {
 
     if (req.user && !showNSFW && !isProfileFetch) {
       query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
-      query.moderationStatus = { $ne: 'pending' };
     }
 
     if (req.user) {
@@ -38,7 +37,13 @@ export const getReels = async (req, res) => {
         const usersWhoBlockedMeRes = await User.find({ blockedUsers: currentUser._id }, '_id');
         const usersWhoBlockedMe = usersWhoBlockedMeRes.map(u => u._id.toString());
         const allBlockedIds = [...blockedUsers.map(id => id.toString()), ...usersWhoBlockedMe];
-        query.author = { $nin: allBlockedIds };
+        if (query.author) {
+          if (typeof query.author === 'string' && allBlockedIds.includes(query.author.toString())) {
+            query.author = { $in: [] };
+          }
+        } else {
+          query.author = { $nin: allBlockedIds };
+        }
       }
     }
 
