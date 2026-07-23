@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreVertical } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreVertical, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -17,6 +17,9 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isArchivedState, setIsArchivedState] = useState(reel.isArchived || false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [nsfwRevealed, setNsfwRevealed] = useState(false);
+
+  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
 
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -189,6 +192,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   };
 
   const toggleVideoPlay = (e) => {
+    if (isBlurred) return;
     const video = e.target.closest('.reel-media-container')?.querySelector('video');
     if (!video) return;
     if (isPlaying) {
@@ -201,6 +205,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   };
 
   const handleMediaClick = (e) => {
+    if (isBlurred) return;
     const video = e.target.closest('.reel-media-container')?.querySelector('video');
     if (video) {
       if (isPlaying) {
@@ -237,7 +242,24 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
             className="author-avatar"
           />
           <div className="author-details">
-            <span className="author-name">{reel.author?.displayName || reel.author?.username}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="author-name">{reel.author?.displayName || reel.author?.username}</span>
+              {reel.isNSFW && (
+                <span style={{ 
+                  background: 'rgba(239, 68, 68, 0.15)', 
+                  color: '#ef4444', 
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '4px', 
+                  padding: '1px 5px', 
+                  fontSize: '10px', 
+                  fontWeight: '700',
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}>
+                  🔞 18+
+                </span>
+              )}
+            </div>
             <span className="author-username">@{reel.author?.username}</span>
           </div>
         </Link>
@@ -292,7 +314,35 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
       </div>
 
       {/* Media Block */}
-      <div className="reel-media-container" onClick={handleMediaClick}>
+      <div className="reel-media-container" onClick={handleMediaClick} style={{ position: 'relative', overflow: 'hidden' }}>
+        {isBlurred && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setNsfwRevealed(true);
+            }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(0,0,0,0.65)',
+              backdropFilter: 'blur(20px)',
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+              textAlign: 'center',
+              padding: '16px',
+            }}
+          >
+            <AlertCircle size={32} color="#ef4444" style={{ marginBottom: '8px' }} />
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: '16px' }}>🔞 18+ Sensitive Snip</div>
+            <div style={{ color: '#ddd', fontSize: '13px', marginTop: '4px', maxWidth: '260px' }}>This snip contains 18+ sensitive material. Tap to view.</div>
+            <div style={{ color: '#fff', fontSize: '13px', marginTop: '12px', background: '#ef4444', padding: '6px 16px', borderRadius: '20px', fontWeight: 600 }}>Tap to view (18+)</div>
+          </div>
+        )}
         {reel.isReal && (
           <div className="reel-real-badge-overlay">
             <Camera size={12} style={{ marginRight: '4px' }} /> Real
@@ -307,19 +357,22 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
               loop
               muted={isMuted}
               playsInline
+              style={isBlurred ? { filter: 'blur(30px) scale(1.05)' } : {}}
             />
-            {!isPlaying && (
+            {!isPlaying && !isBlurred && (
               <div className="play-overlay">
                 <Play size={40} className="play-icon" />
               </div>
             )}
-            <button
-              className="mute-btn"
-              onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
-              aria-label={isMuted ? 'Unmute' : 'Mute'}
-            >
-              <Volume2 size={16} color={isMuted ? '#ef4444' : '#22c55e'} />
-            </button>
+            {!isBlurred && (
+              <button
+                className="mute-btn"
+                onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
+                aria-label={isMuted ? 'Unmute' : 'Mute'}
+              >
+                <Volume2 size={16} color={isMuted ? '#ef4444' : '#22c55e'} />
+              </button>
+            )}
           </>
         ) : (
           <div className="media-fallback">
