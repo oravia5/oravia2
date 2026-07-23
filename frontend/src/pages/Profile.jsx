@@ -28,23 +28,26 @@ export default function Profile() {
 
 
   const fetchProfileData = async ({ showLoader = true } = {}) => {
+    if (!targetUsername) {
+      if (showLoader) setLoading(false);
+      setError('Please log in or specify a username to view profile.');
+      return;
+    }
     if (showLoader) setLoading(true);
     setError('');
     try {
       const profileRes = await client.get(`/users/${targetUsername}`);
-      if (!profileRes.data.success) {
+      if (!profileRes.data?.success) {
         throw new Error('User profile not found');
       }
       const profileInfo = profileRes.data.data;
       setProfile(profileInfo);
 
       const postsRes = await client.get(`/posts?author=${profileInfo._id}`);
-      setPosts(postsRes.data.data);
+      setPosts(Array.isArray(postsRes.data?.data) ? postsRes.data.data : []);
 
       const reelsRes = await client.get(`/posts?author=${profileInfo._id}&type=reel`);
-      setReels(reelsRes.data.data);
-
-      // Removed own profile specific loads (saved, archived, drafts moved to settings subpages)
+      setReels(Array.isArray(reelsRes.data?.data) ? reelsRes.data.data : []);
     } catch (err) {
       console.error(err);
       if (err.response?.status === 403 && err.response?.data?.blocked) {
@@ -118,8 +121,8 @@ export default function Profile() {
 
   // Group posts by user-defined custom album name dynamically
   const customAlbumsMap = {};
-  posts.forEach((post) => {
-    if (post.album) {
+  (posts || []).forEach((post) => {
+    if (post && post.album) {
       const name = post.album.trim();
       if (!customAlbumsMap[name]) {
         customAlbumsMap[name] = [];
@@ -128,8 +131,8 @@ export default function Profile() {
     }
   });
 
-  reels.forEach((reel) => {
-    if (reel.album) {
+  (reels || []).forEach((reel) => {
+    if (reel && reel.album) {
       const name = reel.album.trim();
       if (!customAlbumsMap[name]) {
         customAlbumsMap[name] = [];
@@ -228,7 +231,7 @@ export default function Profile() {
             {profile && (
               <div className="profile-stats-strip">
                 <div className="stat-strip-item">
-                  <span className="stat-num">{posts.length + reels.length}</span>
+                  <span className="stat-num">{(posts?.length || 0) + (reels?.length || 0)}</span>
                   <span className="stat-label">Posts</span>
                 </div>
                 <div className="stat-strip-item clickable-stat" onClick={() => !profile.isBlocked && navigate(`/profile/${targetUsername}/followers`)}>
