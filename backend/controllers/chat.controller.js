@@ -2,6 +2,7 @@ import Ably from 'ably';
 import User from '../models/User.js';
 import Conversation from '../models/Conversation.js';
 import storageService from '../services/storage.service.js';
+import { sendPushNotification } from '../services/pushNotification.service.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -131,6 +132,7 @@ export const startConversation = async (req, res) => {
 export const updateConversation = async (req, res) => {
   try {
     const { channelId, lastMessageText } = req.body;
+    const senderId = req.user._id.toString();
 
     if (!channelId) {
       return res.status(400).json({
@@ -139,15 +141,40 @@ export const updateConversation = async (req, res) => {
       });
     }
 
-    await Conversation.findOneAndUpdate(
+    const conversation = await Conversation.findOneAndUpdate(
       { channelId },
       {
         $set: {
           lastMessageAt: new Date(),
           lastMessageText: (lastMessageText || '').substring(0, 100),
         },
-      }
+      },
+      { new: true }
     );
+
+    // ASYNC PUSH NOTIFICATION FOR DIRECT CHAT MESSAGES
+    setImmediate(async () => {
+      try {
+        if (!conversation || !conversation.participants) return;
+        const recipientId = conversation.participants.find(
+          (p) => p.toString() !== senderId
+        );
+
+        if (!recipientId) return;
+
+        const senderUser = req.user;
+        const senderName = senderUser.displayName || `@${senderUser.username}`;
+
+        sendPushNotification(recipientId, {
+          title: senderName,
+          body: lastMessageText || 'Sent you a message 💬',
+          icon: senderUser.avatarUrl || 'https://oravia.co.in/icon-192x192.png', // Sender's profile picture
+          url: 'https://oravia.co.in/messages',
+        });
+      } catch (pushErr) {
+        console.error('Error sending chat push notification:', pushErr.message);
+      }
+    });
 
     res.json({ success: true });
   } catch (error) {

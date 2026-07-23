@@ -19,6 +19,19 @@ export const createNotification = async ({ recipient, actor, type, post, comment
         const actorUser = await User.findById(actor).select('displayName username avatarUrl');
         const actorName = actorUser ? (actorUser.displayName || `@${actorUser.username}`) : 'Someone';
 
+        let postMedia = null;
+        if (post) {
+          try {
+            const PostModel = (await import('../models/Post.js')).default;
+            const postObj = await PostModel.findById(post).select('mediaUrl thumbnailUrl mediaItems type').lean();
+            if (postObj) {
+              postMedia = postObj.thumbnailUrl || postObj.mediaUrl || (postObj.mediaItems && postObj.mediaItems[0] ? (postObj.mediaItems[0].thumbnailUrl || postObj.mediaItems[0].url) : null);
+            }
+          } catch (e) {
+            console.error('Error fetching post media for push:', e);
+          }
+        }
+
         let title = 'Oravia';
         let body = `${actorName} interacted with you`;
         let targetUrl = 'https://oravia.co.in/notifications';
@@ -39,7 +52,8 @@ export const createNotification = async ({ recipient, actor, type, post, comment
         sendPushNotification(recipient, {
           title,
           body,
-          icon: actorUser?.avatarUrl || 'https://oravia.co.in/icon-192x192.png',
+          icon: actorUser?.avatarUrl || 'https://oravia.co.in/icon-192x192.png', // Sender's profile picture
+          image: postMedia || null, // Big photo/video preview thumbnail
           url: targetUrl,
         });
       } catch (pushErr) {

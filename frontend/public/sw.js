@@ -8,8 +8,9 @@ self.addEventListener('push', function (event) {
     const title = data.title || 'Oravia';
     const options = {
       body: data.body || 'You have a new update!',
-      icon: data.icon || '/oravia_icon.png',
-      badge: '/oravia_icon.png',
+      icon: data.icon || 'https://oravia.co.in/oravia_icon.png',
+      badge: 'https://oravia.co.in/oravia_icon.png',
+      image: data.image || null, // Big photo/video thumbnail preview
       vibrate: [100, 50, 100],
       data: {
         url: data.url || 'https://oravia.co.in/notifications',
