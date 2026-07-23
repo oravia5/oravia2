@@ -9,7 +9,7 @@ import { getFullMediaUrl } from '../utils/mediaUrl';
 export default function Profile() {
   const navigate = useNavigate();
   const { username } = useParams();
-  const { user: currentUser, logout } = useAuth();
+  const { user: currentUser, logout, isAuthenticated } = useAuth();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
