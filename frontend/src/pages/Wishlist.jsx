@@ -111,11 +111,36 @@ export default function Wishlist() {
                 </div>
                 <div className="wishlist-details">
                   <h4 className="wishlist-title">{prod.title}</h4>
-                  <div className="wishlist-pricing">
-                    <span className="wishlist-price">{prod.price}</span>
+                  <div className="wishlist-pricing" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span className="wishlist-price" style={{ color: prod.price === 'FREE' ? '#22c55e' : 'var(--accent-indigo)' }}>
+                      {prod.price}
+                    </span>
                     {prod.originalPrice && (
-                      <span className="wishlist-original-price">{prod.originalPrice}</span>
+                      <span className="wishlist-original-price" style={{ textDecoration: 'line-through', color: '#52525b', fontSize: '11px' }}>
+                        {prod.originalPrice}
+                      </span>
                     )}
+                    {(() => {
+                      const parseNum = (v) => {
+                        if (!v) return NaN;
+                        if (v.toString().toLowerCase() === 'free') return 0;
+                        const c = v.toString().replace(/[^0-9.]/g, '');
+                        return c ? parseFloat(c) : NaN;
+                      };
+                      const p = parseNum(prod.price);
+                      const op = parseNum(prod.originalPrice);
+                      if (!isNaN(p) && !isNaN(op) && op > p && op > 0) {
+                        const pct = Math.round(((op - p) / op) * 100);
+                        if (pct > 0) {
+                          return (
+                            <span style={{ fontSize: '10px', fontWeight: '700', color: '#22c55e', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '1px 5px', borderRadius: '4px' }}>
+                              ⚡ {pct}% OFF
+                            </span>
+                          );
+                        }
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
                 {prod.link && (

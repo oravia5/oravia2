@@ -962,11 +962,44 @@ export default function PostCard({ post, onDeleteSuccess }) {
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <p style={{ fontSize: '11px', fontWeight: '600', color: '#e4e4e7', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prod.title}</p>
                   {!prod.fileUrl && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent-indigo)' }}>{prod.price}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: prod.price === 'FREE' ? '#22c55e' : 'var(--accent-indigo)' }}>
+                        {prod.price}
+                      </span>
                       {prod.originalPrice && (
-                        <span style={{ fontSize: '10px', textDecoration: 'line-through', color: '#52525b' }}>{prod.originalPrice}</span>
+                        <span style={{ fontSize: '10px', textDecoration: 'line-through', color: '#52525b' }}>
+                          {prod.originalPrice}
+                        </span>
                       )}
+                      {(() => {
+                        const parseNum = (v) => {
+                          if (!v) return NaN;
+                          if (v.toString().toLowerCase() === 'free') return 0;
+                          const c = v.toString().replace(/[^0-9.]/g, '');
+                          return c ? parseFloat(c) : NaN;
+                        };
+                        const p = parseNum(prod.price);
+                        const op = parseNum(prod.originalPrice);
+                        if (!isNaN(p) && !isNaN(op) && op > p && op > 0) {
+                          const pct = Math.round(((op - p) / op) * 100);
+                          if (pct > 0) {
+                            return (
+                              <span style={{
+                                fontSize: '9px',
+                                fontWeight: '700',
+                                color: '#22c55e',
+                                background: 'rgba(34, 197, 94, 0.12)',
+                                border: '1px solid rgba(34, 197, 94, 0.25)',
+                                padding: '1px 5px',
+                                borderRadius: '4px'
+                              }}>
+                                ⚡ {pct}% OFF
+                              </span>
+                            );
+                          }
+                        }
+                        return null;
+                      })()}
                     </div>
                   )}
                 </div>

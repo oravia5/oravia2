@@ -73,6 +73,23 @@ const POPULAR_LOCATIONS = [
   'Vancouver, BC, Canada'
 ];
 
+const parseNumericPrice = (val) => {
+  if (typeof val === 'number') return val;
+  if (!val) return NaN;
+  if (val.toString().toLowerCase() === 'free') return 0;
+  const cleaned = val.toString().replace(/[^0-9.]/g, '');
+  return cleaned ? parseFloat(cleaned) : NaN;
+};
+
+const calculateDiscountPercent = (priceVal, originalPriceVal) => {
+  const p = parseNumericPrice(priceVal);
+  const op = parseNumericPrice(originalPriceVal);
+  if (!isNaN(p) && !isNaN(op) && op > p && op > 0) {
+    return Math.round(((op - p) / op) * 100);
+  }
+  return 0;
+};
+
 export default function CreatePost() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -101,7 +118,18 @@ export default function CreatePost() {
   const [captureSource, setCaptureSource] = useState('gallery'); // 'gallery' or 'camera'
   
   // Products state (list of affiliate products)
-  const [products, setProducts] = useState(targetItem ? targetItem.products : []);
+  const [products, setProducts] = useState(
+    targetItem && targetItem.products
+      ? targetItem.products.map(p => ({
+          ...p,
+          currency: p.currency || (p.price?.startsWith('$') ? '$' : (p.price?.startsWith('€') ? '€' : (p.price?.startsWith('£') ? '£' : '₹'))),
+          price: p.price ? (p.price === 'FREE' ? '0' : p.price.replace(/[^0-9.]/g, '')) : '',
+          originalPrice: p.originalPrice ? p.originalPrice.replace(/[^0-9.]/g, '') : '',
+          isFree: p.price === 'FREE' || p.price === '0',
+          saved: true
+        }))
+      : []
+  );
   const [productErrors, setProductErrors] = useState({});
   
   const [uploading, setUploading] = useState(false);
@@ -239,11 +267,13 @@ export default function CreatePost() {
     setProducts([
       ...products,
       {
+        currency: '₹',
         type: '',
         title: '',
         link: '',
         price: '',
         originalPrice: '',
+        isFree: false,
         imageFile: null,
         previewUrl: '',
         digitalFile: null,
@@ -317,9 +347,26 @@ export default function CreatePost() {
   const validateProduct = (prod) => {
     const errs = {};
     if (!prod.type) errs.type = 'Pick a product type';
-    if (!prod.title.trim()) errs.title = 'Name is required';
+    if (!prod.title || !prod.title.trim()) errs.title = 'Product name is required';
     if (prod.type === 'affiliate') {
-      if (!prod.price.trim()) errs.price = 'Price is required';
+      const numP = prod.isFree ? 0 : parseNumericPrice(prod.price);
+      if (!prod.isFree) {
+        if (!prod.price || !prod.price.toString().trim()) {
+          errs.price = 'Sale Price is required';
+        } else if (isNaN(numP) || numP < 0) {
+          errs.price = 'Enter a valid numeric price';
+        }
+      }
+
+      if (prod.originalPrice && prod.originalPrice.toString().trim()) {
+        const numOp = parseNumericPrice(prod.originalPrice);
+        if (isNaN(numOp) || numOp < 0) {
+          errs.originalPrice = 'Enter a valid numeric MRP';
+        } else if (!isNaN(numP) && numOp < numP) {
+          errs.originalPrice = 'Original MRP must be ≥ Sale Price';
+        }
+      }
+
       if (!prod.link || !prod.link.trim()) {
         errs.link = 'Affiliate link is required';
       } else if (!prod.link.startsWith('http://') && !prod.link.startsWith('https://')) {
@@ -416,16 +463,24 @@ export default function CreatePost() {
           if (prod.digitalFile) {
             formData.append('productFiles', prod.digitalFile);
           }
+          const curr = prod.currency || '₹';
+          const numP = prod.isFree ? 0 : parseNumericPrice(prod.price);
+          const numOp = parseNumericPrice(prod.originalPrice);
+
+          const formattedPrice = prod.isFree ? 'FREE' : (!isNaN(numP) ? `${curr}${numP}` : (prod.price || '').trim());
+          const formattedOriginalPrice = (!isNaN(numOp) && numOp > (isNaN(numP) ? 0 : numP)) ? `${curr}${numOp}` : '';
+
           const obj = {
             type: prod.type,
             title: prod.title.trim(),
+            currency: curr,
             hasImageFile: !!prod.imageFile,
             imageUrl: prod.imageUrl || '',
           };
           if (prod.type === 'affiliate') {
             obj.link = prod.link.trim();
-            obj.price = prod.price.trim();
-            obj.originalPrice = (prod.originalPrice || '').trim();
+            obj.price = formattedPrice;
+            obj.originalPrice = formattedOriginalPrice;
           } else if (prod.type === 'downloadable') {
             obj.hasDigitalFile = !!prod.digitalFile;
             obj.fileUrl = prod.fileUrl || '';
@@ -479,16 +534,24 @@ export default function CreatePost() {
       if (prod.digitalFile) {
         formData.append('productFiles', prod.digitalFile);
       }
+      const curr = prod.currency || '₹';
+      const numP = prod.isFree ? 0 : parseNumericPrice(prod.price);
+      const numOp = parseNumericPrice(prod.originalPrice);
+
+      const formattedPrice = prod.isFree ? 'FREE' : (!isNaN(numP) ? `${curr}${numP}` : (prod.price || '').trim());
+      const formattedOriginalPrice = (!isNaN(numOp) && numOp > (isNaN(numP) ? 0 : numP)) ? `${curr}${numOp}` : '';
+
       const obj = {
         type: prod.type,
         title: prod.title.trim(),
+        currency: curr,
         hasImageFile: !!prod.imageFile,
         imageUrl: prod.imageUrl || '',
       };
       if (prod.type === 'affiliate') {
         obj.link = prod.link.trim();
-        obj.price = prod.price.trim();
-        obj.originalPrice = (prod.originalPrice || '').trim();
+        obj.price = formattedPrice;
+        obj.originalPrice = formattedOriginalPrice;
       } else if (prod.type === 'downloadable') {
         obj.hasDigitalFile = !!prod.digitalFile;
         obj.fileUrl = prod.fileUrl || '';
@@ -833,11 +896,33 @@ export default function CreatePost() {
                             )}
                           </div>
                           <div className="summary-info">
-                            <span className="summary-name">{item.title || 'Untitled'}</span>
-                            <span className="summary-meta">
-                              {item.type === 'affiliate'
-                                ? `${item.price || ''}${item.originalPrice ? ` (was ${item.originalPrice})` : ''}`
-                                : 'Downloadable'}
+                            <span className="summary-name">{item.title || 'Untitled Product'}</span>
+                            <span className="summary-meta" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              {item.type === 'affiliate' ? (
+                                <>
+                                  <span style={{ fontWeight: '700', color: item.isFree ? '#22c55e' : 'var(--accent-indigo)' }}>
+                                    {item.isFree ? 'FREE' : `${item.currency || '₹'}${item.price}`}
+                                  </span>
+                                  {item.originalPrice && (
+                                    <span style={{ textDecoration: 'line-through', color: '#52525b', fontSize: '11px' }}>
+                                      {item.currency || '₹'}{item.originalPrice}
+                                    </span>
+                                  )}
+                                  {(() => {
+                                    const disc = calculateDiscountPercent(item.isFree ? 0 : item.price, item.originalPrice);
+                                    if (disc > 0) {
+                                      return (
+                                        <span style={{ fontSize: '9px', fontWeight: '700', color: '#22c55e', background: 'rgba(34, 197, 94, 0.12)', padding: '1px 4px', borderRadius: '4px' }}>
+                                          ⚡ {disc}% OFF
+                                        </span>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </>
+                              ) : (
+                                'Downloadable File'
+                              )}
                             </span>
                           </div>
                         </div>
@@ -945,25 +1030,156 @@ export default function CreatePost() {
 
                             {item.type === 'affiliate' && (
                               <>
-                                <div className="product-row-inputs">
-                                  <input
-                                    type="text"
-                                    placeholder="Price (e.g. $19)"
-                                    value={item.price}
-                                    onChange={(e) => { handleProductInputChange(idx, 'price', e.target.value); if (errs.price) setProductErrors((p) => { const n = { ...p }; if (n[idx]) { delete n[idx].price; if (Object.keys(n[idx]).length === 0) delete n[idx]; } return n; }); }}
-                                    className={`prod-text-input price-field ${errs.price ? 'prod-input-error' : ''}`}
+                                {/* Currency Selector & Quick FREE Toggle Bar */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px', marginBottom: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <label style={{ fontSize: '11px', fontWeight: '600', color: '#a1a1aa' }}>Currency:</label>
+                                    <select
+                                      value={item.currency || '₹'}
+                                      onChange={(e) => handleProductInputChange(idx, 'currency', e.target.value)}
+                                      style={{
+                                        background: '#0d0d0d',
+                                        color: '#ffffff',
+                                        border: '1px solid #3f3f46',
+                                        borderRadius: '6px',
+                                        padding: '2px 8px',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                      }}
+                                      disabled={uploading}
+                                    >
+                                      <option value="₹">₹ (INR)</option>
+                                      <option value="$">$ (USD)</option>
+                                      <option value="€">€ (EUR)</option>
+                                      <option value="£">£ (GBP)</option>
+                                    </select>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextFree = !item.isFree;
+                                      const updated = [...products];
+                                      updated[idx].isFree = nextFree;
+                                      if (nextFree) {
+                                        updated[idx].price = '0';
+                                      }
+                                      setProducts(updated);
+                                      if (errs.price) {
+                                        setProductErrors((p) => {
+                                          const n = { ...p };
+                                          if (n[idx]) { delete n[idx].price; if (Object.keys(n[idx]).length === 0) delete n[idx]; }
+                                          return n;
+                                        });
+                                      }
+                                    }}
+                                    style={{
+                                      background: item.isFree ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                      border: item.isFree ? '1px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.1)',
+                                      color: item.isFree ? '#22c55e' : '#a1a1aa',
+                                      padding: '3px 10px',
+                                      borderRadius: '12px',
+                                      fontSize: '11px',
+                                      fontWeight: '700',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
                                     disabled={uploading}
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Original Price"
-                                    value={item.originalPrice || ''}
-                                    onChange={(e) => handleProductInputChange(idx, 'originalPrice', e.target.value)}
-                                    className="prod-text-input original-price-field"
-                                    disabled={uploading}
-                                  />
+                                  >
+                                    <span>🎁 {item.isFree ? 'FREE Item' : 'Mark as FREE'}</span>
+                                  </button>
                                 </div>
-                                {errs.price && <p className="prod-field-error">{errs.price}</p>}
+
+                                <div className="product-row-inputs" style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                                  {/* Sale Price Input */}
+                                  <div style={{ flex: 1, position: 'relative' }}>
+                                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#a1a1aa', marginBottom: '3px' }}>
+                                      SALE PRICE ({item.currency || '₹'}) <span style={{ color: '#ef4444' }}>*</span>
+                                    </label>
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                      <span style={{ position: 'absolute', left: '10px', color: item.isFree ? '#22c55e' : 'var(--accent-indigo)', fontWeight: '700', fontSize: '13px' }}>
+                                        {item.isFree ? 'FREE' : (item.currency || '₹')}
+                                      </span>
+                                      <input
+                                        type="text"
+                                        placeholder={item.isFree ? "0" : "e.g. 799"}
+                                        value={item.isFree ? '0' : item.price}
+                                        disabled={item.isFree || uploading}
+                                        onChange={(e) => {
+                                          handleProductInputChange(idx, 'price', e.target.value);
+                                          if (errs.price) {
+                                            setProductErrors((p) => {
+                                              const n = { ...p };
+                                              if (n[idx]) { delete n[idx].price; if (Object.keys(n[idx]).length === 0) delete n[idx]; }
+                                              return n;
+                                            });
+                                          }
+                                        }}
+                                        className={`prod-text-input price-field ${errs.price ? 'prod-input-error' : ''}`}
+                                        style={{ paddingLeft: item.isFree ? '50px' : '28px' }}
+                                      />
+                                    </div>
+                                    {errs.price && <p className="prod-field-error" style={{ fontSize: '10px', color: '#ef4444', margin: '2px 0 0' }}>{errs.price}</p>}
+                                  </div>
+
+                                  {/* Original MRP Input */}
+                                  <div style={{ flex: 1, position: 'relative' }}>
+                                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#a1a1aa', marginBottom: '3px' }}>
+                                      ORIGINAL MRP <span style={{ fontSize: '9px', fontWeight: '400', color: '#71717a' }}>(Strikethrough)</span>
+                                    </label>
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                      <span style={{ position: 'absolute', left: '10px', color: '#71717a', fontWeight: '700', fontSize: '13px' }}>
+                                        {item.currency || '₹'}
+                                      </span>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g. 999"
+                                        value={item.originalPrice || ''}
+                                        onChange={(e) => {
+                                          handleProductInputChange(idx, 'originalPrice', e.target.value);
+                                          if (errs.originalPrice) {
+                                            setProductErrors((p) => {
+                                              const n = { ...p };
+                                              if (n[idx]) { delete n[idx].originalPrice; if (Object.keys(n[idx]).length === 0) delete n[idx]; }
+                                              return n;
+                                            });
+                                          }
+                                        }}
+                                        className={`prod-text-input original-price-field ${errs.originalPrice ? 'prod-input-error' : ''}`}
+                                        style={{ paddingLeft: '28px' }}
+                                        disabled={uploading}
+                                      />
+                                    </div>
+                                    {errs.originalPrice && <p className="prod-field-error" style={{ fontSize: '10px', color: '#ef4444', margin: '2px 0 0' }}>{errs.originalPrice}</p>}
+                                  </div>
+                                </div>
+
+                                {/* Real-time Discount Badge */}
+                                {(() => {
+                                  const disc = calculateDiscountPercent(item.isFree ? 0 : item.price, item.originalPrice);
+                                  if (disc > 0) {
+                                    return (
+                                      <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{
+                                          fontSize: '11px',
+                                          fontWeight: '700',
+                                          color: '#22c55e',
+                                          background: 'rgba(34, 197, 94, 0.12)',
+                                          border: '1px solid rgba(34, 197, 94, 0.25)',
+                                          padding: '2px 8px',
+                                          borderRadius: '12px'
+                                        }}>
+                                          ⚡ {disc}% DISCOUNT APPLIED
+                                        </span>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+
                                 <input
                                   type="url"
                                   placeholder="Affiliate link (https://...)"
