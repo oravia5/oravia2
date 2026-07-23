@@ -41,12 +41,8 @@ export const getFeed = async (req, res) => {
     }
 
     const showNSFW = req.user ? req.user.showNSFW : false;
-    if (!showNSFW) {
-      if (req.user) {
-        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
-      } else {
-        query.isNSFW = { $ne: true };
-      }
+    if (req.user && !showNSFW) {
+      query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
     }
 
     if (cursor) {
@@ -128,12 +124,8 @@ export const getFollowingFeed = async (req, res) => {
     };
 
     const showNSFW = req.user ? req.user.showNSFW : false;
-    if (!showNSFW) {
-      if (req.user) {
-        query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
-      } else {
-        query.isNSFW = { $ne: true };
-      }
+    if (req.user && !showNSFW) {
+      query.$or = [{ isNSFW: { $ne: true } }, { author: req.user._id }];
     }
 
     const posts = await Post.find(query)
@@ -1043,12 +1035,8 @@ export const getPostsByHashtag = async (req, res) => {
       { status: { $ne: 'draft' } },
     ];
 
-    if (!showNSFW) {
-      if (req.user) {
-        conditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
-      } else {
-        conditions.push({ isNSFW: { $ne: true } });
-      }
+    if (req.user && !showNSFW) {
+      conditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
     }
 
     const query = { $and: conditions };
@@ -1086,12 +1074,8 @@ export const getPostsByLocation = async (req, res) => {
       { status: { $ne: 'draft' } },
     ];
 
-    if (!showNSFW) {
-      if (req.user) {
-        conditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
-      } else {
-        conditions.push({ isNSFW: { $ne: true } });
-      }
+    if (req.user && !showNSFW) {
+      conditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
     }
 
     const query = { $and: conditions };
@@ -1142,12 +1126,8 @@ export const searchPosts = async (req, res) => {
       { status: { $ne: 'draft' } },
     ];
 
-    if (!showNSFW) {
-      if (req.user) {
-        postConditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
-      } else {
-        postConditions.push({ isNSFW: { $ne: true } });
-      }
+    if (req.user && !showNSFW) {
+      postConditions.push({ $or: [{ isNSFW: { $ne: true } }, { author: req.user._id }] });
     }
 
     const postQuery = { $and: postConditions };
