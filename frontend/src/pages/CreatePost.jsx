@@ -73,6 +73,34 @@ const POPULAR_LOCATIONS = [
   'Vancouver, BC, Canada'
 ];
 
+const CURRENCY_LIST = [
+  { code: 'INR', symbol: '₹', name: '₹ (INR - Indian Rupee)' },
+  { code: 'USD', symbol: '$', name: '$ (USD - US Dollar)' },
+  { code: 'EUR', symbol: '€', name: '€ (EUR - Euro)' },
+  { code: 'GBP', symbol: '£', name: '£ (GBP - British Pound)' },
+  { code: 'AED', symbol: 'AED ', name: 'AED (UAE Dirham)' },
+  { code: 'CAD', symbol: 'CA$', name: 'CA$ (CAD - Canadian Dollar)' },
+  { code: 'AUD', symbol: 'AU$', name: 'AU$ (AUD - Australian Dollar)' },
+  { code: 'JPY', symbol: '¥', name: '¥ (JPY - Japanese Yen)' },
+  { code: 'CNY', symbol: 'CN¥', name: 'CN¥ (CNY - Chinese Yuan)' },
+  { code: 'KRW', symbol: '₩', name: '₩ (KRW - South Korean Won)' },
+  { code: 'SGD', symbol: 'SG$', name: 'SG$ (SGD - Singapore Dollar)' },
+  { code: 'NZD', symbol: 'NZ$', name: 'NZ$ (NZD - New Zealand Dollar)' },
+  { code: 'CHF', symbol: 'CHF ', name: 'CHF (Swiss Franc)' },
+  { code: 'SAR', symbol: 'SAR ', name: 'SAR (Saudi Riyal)' },
+  { code: 'BRL', symbol: 'R$', name: 'R$ (BRL - Brazilian Real)' },
+  { code: 'ZAR', symbol: 'R', name: 'R (ZAR - South African Rand)' },
+  { code: 'TRY', symbol: '₺', name: '₺ (TRY - Turkish Lira)' },
+  { code: 'PHP', symbol: '₱', name: '₱ (PHP - Philippine Peso)' },
+  { code: 'THB', symbol: '฿', name: '฿ (THB - Thai Baht)' },
+  { code: 'MYR', symbol: 'RM', name: 'RM (MYR - Malaysian Ringgit)' },
+  { code: 'IDR', symbol: 'Rp', name: 'Rp (IDR - Indonesian Rupiah)' },
+  { code: 'VND', symbol: '₫', name: '₫ (VND - Vietnamese Dong)' },
+  { code: 'MXN', symbol: 'Mex$', name: 'Mex$ (MXN - Mexican Peso)' },
+  { code: 'PLN', symbol: 'zł', name: 'zł (PLN - Polish Zloty)' },
+  { code: 'RUB', symbol: '₽', name: '₽ (RUB - Russian Ruble)' },
+];
+
 const parseNumericPrice = (val) => {
   if (typeof val === 'number') return val;
   if (!val) return NaN;
@@ -1048,14 +1076,16 @@ export default function CreatePost() {
                                         padding: '2px 8px',
                                         fontSize: '12px',
                                         fontWeight: '600',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        maxWidth: '180px'
                                       }}
                                       disabled={uploading}
                                     >
-                                      <option value="₹">₹ (INR)</option>
-                                      <option value="$">$ (USD)</option>
-                                      <option value="€">€ (EUR)</option>
-                                      <option value="£">£ (GBP)</option>
+                                      {CURRENCY_LIST.map((curr) => (
+                                        <option key={curr.code} value={curr.symbol}>
+                                          {curr.name} ({curr.symbol})
+                                        </option>
+                                      ))}
                                     </select>
                                   </div>
 
