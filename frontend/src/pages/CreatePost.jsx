@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Image, Video, Plus, Trash2, MapPin, Sparkles, Upload, Pencil, Check, ShoppingBag, Camera } from 'lucide-react';
+import { ArrowLeft, Image, Video, Plus, Trash2, MapPin, Tag, Gift, Percent, Upload, Pencil, Check, ShoppingBag, Camera } from 'lucide-react';
 import client from '../api/client';
 import { useUpload } from '../context/UploadContext';
 import CaptionInput from '../components/CaptionInput/CaptionInput';
@@ -872,7 +872,9 @@ export default function CreatePost() {
 
           {products.length === 0 ? (
             <div className="empty-products-placeholder">
-              <div className="placeholder-star">✨</div>
+              <div className="placeholder-star" style={{ background: 'rgba(99,102,241,0.1)', padding: '10px', borderRadius: '50%', display: 'inline-flex', marginBottom: '8px' }}>
+                <ShoppingBag size={20} color="var(--accent-indigo)" />
+              </div>
               <p>Add shoppable products directly inside this post. Visitors will see clickable product sliders below your photo/video!</p>
             </div>
           ) : (
@@ -912,8 +914,9 @@ export default function CreatePost() {
                                     const disc = calculateDiscountPercent(item.isFree ? 0 : item.price, item.originalPrice);
                                     if (disc > 0) {
                                       return (
-                                        <span style={{ fontSize: '9px', fontWeight: '700', color: '#22c55e', background: 'rgba(34, 197, 94, 0.12)', padding: '1px 4px', borderRadius: '4px' }}>
-                                          ⚡ {disc}% OFF
+                                        <span style={{ fontSize: '9px', fontWeight: '700', color: '#22c55e', background: 'rgba(34, 197, 94, 0.12)', padding: '1px 5px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                          <Tag size={9} />
+                                          <span>{disc}% OFF</span>
                                         </span>
                                       );
                                     }
@@ -1089,7 +1092,8 @@ export default function CreatePost() {
                                     }}
                                     disabled={uploading}
                                   >
-                                    <span>🎁 {item.isFree ? 'FREE Item' : 'Mark as FREE'}</span>
+                                    <Gift size={13} />
+                                    <span>{item.isFree ? 'FREE Item' : 'Mark as FREE'}</span>
                                   </button>
                                 </div>
 
@@ -1170,9 +1174,13 @@ export default function CreatePost() {
                                           background: 'rgba(34, 197, 94, 0.12)',
                                           border: '1px solid rgba(34, 197, 94, 0.25)',
                                           padding: '2px 8px',
-                                          borderRadius: '12px'
+                                          borderRadius: '12px',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px'
                                         }}>
-                                          ⚡ {disc}% DISCOUNT APPLIED
+                                          <Tag size={12} />
+                                          <span>{disc}% DISCOUNT APPLIED</span>
                                         </span>
                                       </div>
                                     );

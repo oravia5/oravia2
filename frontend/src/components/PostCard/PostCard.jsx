@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { queueView } from '../../utils/viewTracker';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle, Tag } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -991,9 +991,13 @@ export default function PostCard({ post, onDeleteSuccess }) {
                                 background: 'rgba(34, 197, 94, 0.12)',
                                 border: '1px solid rgba(34, 197, 94, 0.25)',
                                 padding: '1px 5px',
-                                borderRadius: '4px'
+                                borderRadius: '4px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
                               }}>
-                                ⚡ {pct}% OFF
+                                <Tag size={9} />
+                                <span>{pct}% OFF</span>
                               </span>
                             );
                           }

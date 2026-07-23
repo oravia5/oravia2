@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, FolderHeart, Download, ShoppingBag, Loader2 } from 'lucide-react';
+import { ArrowLeft, FolderHeart, Download, ShoppingBag, Loader2, Tag } from 'lucide-react';
 import client from '../api/client';
 import { getFullMediaUrl } from '../utils/mediaUrl';
 
@@ -133,8 +133,9 @@ export default function Wishlist() {
                         const pct = Math.round(((op - p) / op) * 100);
                         if (pct > 0) {
                           return (
-                            <span style={{ fontSize: '10px', fontWeight: '700', color: '#22c55e', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '1px 5px', borderRadius: '4px' }}>
-                              ⚡ {pct}% OFF
+                            <span style={{ fontSize: '10px', fontWeight: '700', color: '#22c55e', background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.25)', padding: '1px 5px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <Tag size={9} />
+                              <span>{pct}% OFF</span>
                             </span>
                           );
                         }
