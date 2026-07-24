@@ -160,16 +160,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
     navigate('/create-post', { state: { editPost: reel } });
   };
 
-  const handleDownloadFileClick = async (prod, e) => {
-    if (e) e.stopPropagation();
-    const isSelf = user && reel.author && user._id.toString() === reel.author._id.toString();
-    const isFollowing = isSelf || isFollowingAuthorState || (
-      user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
-    );
-    if (prod.requireFollow && !isFollowing) {
-      setFollowUnlockModal(prod);
-      return;
-    }
+  const triggerActualDownload = async (prod) => {
     try {
       const res = await client.post(`/posts/${reel._id}/products/${prod._id}/download`);
       if (res.data.success) {
@@ -187,6 +178,19 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
     }
   };
 
+  const handleDownloadFileClick = async (prod, e) => {
+    if (e) e.stopPropagation();
+    const isSelf = user && reel.author && user._id.toString() === reel.author._id.toString();
+    const isFollowing = isSelf || isFollowingAuthorState || (
+      user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
+    );
+    if (prod.requireFollow && !isFollowing) {
+      setFollowUnlockModal(prod);
+      return;
+    }
+    triggerActualDownload(prod);
+  };
+
   const handleFollowAndDownload = async () => {
     if (!isAuthenticated) {
       setDrawerAction('follow creators to unlock free downloads');
@@ -194,13 +198,21 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
       return;
     }
     try {
-      if (reel.author?._id) {
-        await client.post(`/users/${reel.author._id}/follow`);
+      const authorId = reel.author?._id || reel.author;
+      if (authorId) {
+        const res = await client.post(`/users/${authorId}/follow`);
         setIsFollowingAuthorState(true);
+        if (res.data?.success && user) {
+          const updatedFollowing = [...(user.following || [])];
+          if (!updatedFollowing.some(id => id.toString() === authorId.toString())) {
+            updatedFollowing.push(authorId);
+            updateUserData({ following: updatedFollowing });
+          }
+        }
       }
       const prodToDownload = followUnlockModal;
       setFollowUnlockModal(null);
-      if (prodToDownload) handleDownloadFileClick(prodToDownload);
+      if (prodToDownload) triggerActualDownload(prodToDownload);
     } catch (err) {
       console.error('Follow error:', err);
     }
