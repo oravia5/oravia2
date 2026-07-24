@@ -56,7 +56,7 @@ export const sendPushNotification = (userId, notificationPayload) => {
       const payload = JSON.stringify({
         title: notificationPayload.title || 'Oravia',
         body: notificationPayload.body || 'You have a new notification!',
-        icon: formatUrl(notificationPayload.icon, 'https://oravia.co.in/icon-192x192.png'),
+        icon: formatUrl(notificationPayload.icon, 'https://oravia.co.in/logo192.png'),
         image: notificationPayload.image ? formatUrl(notificationPayload.image, null) : null,
         url: formatUrl(notificationPayload.url, 'https://oravia.co.in/notifications'),
         data: notificationPayload.data || {},

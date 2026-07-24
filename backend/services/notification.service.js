@@ -52,7 +52,7 @@ export const createNotification = async ({ recipient, actor, type, post, comment
         sendPushNotification(recipient, {
           title,
           body,
-          icon: actorUser?.avatarUrl || 'https://oravia.co.in/icon-192x192.png', // Sender's profile picture
+          icon: actorUser?.avatarUrl || 'https://oravia.co.in/logo192.png', // Sender's profile picture
           image: postMedia || null, // Big photo/video preview thumbnail
           url: targetUrl,
         });
