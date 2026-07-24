@@ -56,29 +56,42 @@ export default function ArchivedPosts() {
           </div>
         ) : (
           <div className="posts-preview-grid">
-            {archivedPosts.map((post) => (
-              <div 
-                key={post._id} 
-                className="post-preview-card"
-                onClick={() => navigate(`/post/${post._id}`, { state: { posts: archivedPosts, scrollToId: post._id } })}
-              >
-                <div className="preview-media-wrapper">
-                  {post.type === 'video' ? (
-                    <video src={getFullMediaUrl(post.mediaUrl)} className="preview-media" muted playsInline />
-                  ) : (
-                    <img src={getFullMediaUrl(post.mediaUrl)} alt="" className="preview-media" />
-                  )}
-                  {post.type === 'video' && <div className="preview-media-indicator">🎥</div>}
-                </div>
-                <div className="preview-info">
-                  <p className="preview-caption">{post.caption || 'Untitled Post'}</p>
-                  <div className="preview-footer">
-                    <span className="preview-author">@{post.author?.username || user?.username}</span>
-                    <span className="preview-likes">❤️ {post.likes?.length || 0}</span>
+            {archivedPosts.map((post) => {
+              const isVid = post.type === 'video' || post.type === 'reel';
+              return (
+                <div 
+                  key={post._id} 
+                  className="post-preview-card"
+                  onClick={() => {
+                    if (post.type === 'reel') {
+                      navigate('/snips', { state: { activeId: post._id, reelsList: archivedPosts.filter(p => p.type === 'reel') } });
+                    } else {
+                      navigate(`/post/${post._id}`, { state: { posts: archivedPosts, scrollToId: post._id } });
+                    }
+                  }}
+                >
+                  <div className="preview-media-wrapper">
+                    {isVid ? (
+                      post.thumbnailUrl ? (
+                        <img src={getFullMediaUrl(post.thumbnailUrl)} alt="" className="preview-media" />
+                      ) : (
+                        <video src={getFullMediaUrl(post.mediaUrl)} className="preview-media" muted playsInline />
+                      )
+                    ) : (
+                      <img src={getFullMediaUrl(post.mediaUrl)} alt="" className="preview-media" />
+                    )}
+                    {isVid && <div className="preview-media-indicator">🎬</div>}
+                  </div>
+                  <div className="preview-info">
+                    <p className="preview-caption">{post.caption || (post.type === 'reel' ? 'Untitled Snip' : 'Untitled Post')}</p>
+                    <div className="preview-footer">
+                      <span className="preview-author">@{post.author?.username || user?.username}</span>
+                      <span className="preview-likes">❤️ {post.likes?.length || 0}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

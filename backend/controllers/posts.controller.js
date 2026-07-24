@@ -962,7 +962,7 @@ export const getPosts = async (req, res) => {
 
     if (type) {
       query.type = type;
-    } else {
+    } else if (archived !== 'true' && saved !== 'true') {
       // Exclude reels by default for regular post listings if type is not specified
       query.type = { $ne: 'reel' };
     }
