@@ -1,16 +1,26 @@
 import webpush from 'web-push';
 import User from '../models/User.js';
 
-// Configure Web Push VAPID details
-const publicVapidKey = process.env.VAPID_PUBLIC_KEY;
-const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@oravia.co.in';
+// Lazy VAPID initialization flag — env vars are NOT available at import time
+// because dotenv.config() runs AFTER ES module imports in server.js.
+let vapidInitialized = false;
 
-if (publicVapidKey && privateVapidKey) {
+function ensureVapidInit() {
+  if (vapidInitialized) return true;
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const subject = process.env.VAPID_SUBJECT || 'mailto:admin@oravia.co.in';
+  if (!publicKey || !privateKey) {
+    return false;
+  }
   try {
-    webpush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
+    webpush.setVapidDetails(subject, publicKey, privateKey);
+    vapidInitialized = true;
+    console.log('Web Push VAPID initialized successfully');
+    return true;
   } catch (err) {
     console.error('Failed to initialize web-push VAPID details:', err.message);
+    return false;
   }
 }
 
@@ -24,13 +34,13 @@ if (publicVapidKey && privateVapidKey) {
  * @param {object} notificationPayload - { title, body, icon, url, data }
  */
 export const sendPushNotification = (userId, notificationPayload) => {
-  if (!publicVapidKey || !privateVapidKey) {
-    return;
-  }
-
   // Execute asynchronously in background without blocking the main event loop
   setImmediate(async () => {
     try {
+      if (!ensureVapidInit()) {
+        return;
+      }
+
       const user = await User.findById(userId).select('pushSubscriptions');
       if (!user || !user.pushSubscriptions || user.pushSubscriptions.length === 0) {
         return;
@@ -86,3 +96,4 @@ export const sendPushNotification = (userId, notificationPayload) => {
     }
   });
 };
+
