@@ -166,7 +166,18 @@ export default function Profile() {
         <span className="profile-title-header" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           {isOwnProfile ? 'My Profile' : `@${targetUsername}`}
         </span>
-        <div style={{ width: '36px' }} /> {/* Spacer to balance left icon */}
+        {isOwnProfile ? (
+          <div style={{ width: '36px' }} />
+        ) : (
+          <button 
+            className="share-header-btn" 
+            onClick={() => navigate(`/profile/${targetUsername}/share`)} 
+            aria-label="Share Profile"
+            style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <Share2 size={18} />
+          </button>
+        )}
       </header>
 
       {/* Sliding Sidebar Menu */}

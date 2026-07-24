@@ -205,14 +205,6 @@ export default function ProfileHeader({ profile, isOwnProfile, onProfileUpdate, 
                     >
                       {isFollowing ? 'Following' : 'Follow'}
                     </button>
-                    <button 
-                      className="btn-secondary share-btn"
-                      onClick={() => navigate(`/profile/${profile.username}/share`)}
-                      style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', padding: '10px 14px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                      aria-label="Share Profile"
-                    >
-                      <Share2 size={16} />
-                    </button>
                     {isFollowing && profile.isFollowingBack && (
                       <button 
                         className="btn-secondary message-action-btn"
