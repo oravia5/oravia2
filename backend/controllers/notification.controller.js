@@ -1,7 +1,8 @@
-import { getNotifications, markAsRead, markAllAsRead, getUnreadCount } from '../services/notification.service.js';
+import { getNotifications, markAsRead, markAllAsRead, getUnreadCount, checkAndCreateSuggestedCreatorNotification } from '../services/notification.service.js';
 
 export const fetchNotifications = async (req, res) => {
   try {
+    await checkAndCreateSuggestedCreatorNotification(req.user._id);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const data = await getNotifications(req.user._id, page, limit);
@@ -14,6 +15,7 @@ export const fetchNotifications = async (req, res) => {
 
 export const fetchUnreadCount = async (req, res) => {
   try {
+    await checkAndCreateSuggestedCreatorNotification(req.user._id);
     const count = await getUnreadCount(req.user._id);
     res.json({ success: true, data: { count } });
   } catch (error) {

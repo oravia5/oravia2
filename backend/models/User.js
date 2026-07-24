@@ -143,6 +143,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    lastSuggestedNotifAt: {
+      type: Date,
+      default: null,
+    },
     pushSubscriptions: [
       {
         endpoint: { type: String, required: true },

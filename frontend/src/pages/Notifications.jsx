@@ -16,6 +16,7 @@ const getNotificationText = (type) => {
     case 'follow': return 'started following you';
     case 'share': return 'shared your post';
     case 'comment_like': return 'liked your comment';
+    case 'suggested_creator': return 'is a recommended creator to follow ✨';
     default: return 'interacted with your post';
   }
 };
@@ -28,6 +29,7 @@ const getNotificationIcon = (type) => {
     case 'follow': return <UserPlus size={16} color="#22c55e" />;
     case 'share': return <Share2 size={16} color="#eab308" />;
     case 'comment_like': return <Heart size={16} fill="#f43f5e" color="#f43f5e" />;
+    case 'suggested_creator': return <UserPlus size={16} color="#a855f7" />;
     default: return <Bell size={16} />;
   }
 };
@@ -117,7 +119,7 @@ export default function Notifications() {
     }
     if (n.post) {
       navigate(`/post/${n.post._id || n.post}`);
-    } else if (n.type === 'follow') {
+    } else if (n.type === 'follow' || n.type === 'suggested_creator') {
       navigate(`/profile/${n.actor?.username}`);
     }
   };
@@ -210,12 +212,12 @@ export default function Notifications() {
 
                 {/* Right Action Box: Follow Back button or Post Preview Thumbnail */}
                 <div className="alert-action-box">
-                  {n.type === 'follow' && n.actor && (
+                  {(n.type === 'follow' || n.type === 'suggested_creator') && n.actor && (
                     <button
                       className={`notif-follow-btn ${followingMap[n.actor._id] ? 'btn-following' : 'btn-not-following'}`}
                       onClick={(e) => handleFollowToggle(e, n.actor._id)}
                     >
-                      {followingMap[n.actor._id] ? 'Following' : 'Follow Back'}
+                      {followingMap[n.actor._id] ? 'Following' : 'Follow'}
                     </button>
                   )}
 

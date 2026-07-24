@@ -47,6 +47,10 @@ export const createNotification = async ({ recipient, actor, type, post, comment
           body = `${actorName} liked your comment 👍`;
         } else if (type === 'share') {
           body = `${actorName} shared your post 🔄`;
+        } else if (type === 'suggested_creator') {
+          title = '✨ Creator Recommendation';
+          body = `Check out ${actorName}'s latest posts & downloadable assets! 👤`;
+          targetUrl = `https://oravia.co.in/profile/${actorUser?.username || ''}`;
         }
 
         sendPushNotification(recipient, {
@@ -132,3 +136,39 @@ export const deleteFollowNotification = async (recipient, actor) => {
     console.error('Error deleting follow notification:', error);
   }
 };
+
+export const checkAndCreateSuggestedCreatorNotification = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return;
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    if (user.lastSuggestedNotifAt && user.lastSuggestedNotifAt > twentyFourHoursAgo) {
+      return;
+    }
+
+    const excludeIds = [user._id, ...(user.following || []), ...(user.blockedUsers || [])];
+
+    const randomCreators = await User.aggregate([
+      { $match: { _id: { $nin: excludeIds } } },
+      { $sample: { size: 1 } },
+      { $project: { _id: 1, username: 1, displayName: 1, avatarUrl: 1 } }
+    ]);
+
+    if (!randomCreators || randomCreators.length === 0) return;
+
+    const suggestedCreator = randomCreators[0];
+
+    await createNotification({
+      recipient: user._id,
+      actor: suggestedCreator._id,
+      type: 'suggested_creator'
+    });
+
+    user.lastSuggestedNotifAt = new Date();
+    await user.save();
+  } catch (err) {
+    console.error('Error creating suggested creator notification:', err);
+  }
+};
+
