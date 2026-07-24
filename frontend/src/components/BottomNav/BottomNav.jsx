@@ -77,7 +77,7 @@ export default function BottomNav() {
             left: 0;
             right: 0;
             z-index: 999;
-            padding: 0 16px 12px 16px;
+            padding: 0 16px calc(12px + var(--safe-bottom)) 16px;
             background: linear-gradient(to top, #000000 70%, rgba(0, 0, 0, 0) 100%);
             pointer-events: none;
           }

@@ -8,6 +8,7 @@ import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import LikesSheet from '../LikesSheet/LikesSheet';
+import { useNsfw } from '../../context/NsfwContext';
 
 const POPULAR_LOCATIONS = [
   'Mumbai, Maharashtra, India',
@@ -77,7 +78,7 @@ const POPULAR_LOCATIONS = [
 ];
 
 export default function PostCard({ post, onDeleteSuccess }) {
-  const [nsfwRevealed, setNsfwRevealed] = useState(false);
+  const { nsfwRevealed, revealNsfw } = useNsfw();
   const [showAgeGate, setShowAgeGate] = useState(false);
   const { user, updateUserData, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -240,7 +241,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const mediaItems = hasCarousel
     ? post.mediaItems
     : post.mediaUrl
-      ? [{ url: post.mediaUrl, type: (post.type === 'video' || post.type === 'reel') ? 'video' : 'photo', thumbnailUrl: post.thumbnailUrl || '' }]
+      ? [{ url: post.mediaUrl, type: (post.type === 'video' || post.type === 'reel' || post.type === 'snip') ? 'video' : 'photo', thumbnailUrl: post.thumbnailUrl || '' }]
       : [];
 
   // Auto-play/pause & mute video when the post scrolls in/out of view
@@ -491,7 +492,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
     }
   };
 
-  const isBlurred = Boolean(post.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
+  const isOwnContent = isAuthenticated && user?._id && post.author?._id === user._id;
+  const isBlurred = Boolean(post.isNSFW) && !isOwnContent && (isAuthenticated ? !user?.showNSFW : !nsfwRevealed);
 
   const toggleVideoPlay = (e) => {
     if (isBlurred) return;
@@ -552,7 +554,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
             onClick={() => {
               sessionStorage.setItem('oravia_18plus_confirmed', 'true');
               setShowAgeGate(false);
-              setNsfwRevealed(true);
+              revealNsfw();
             }}
             style={{
               background: '#fff',
@@ -714,7 +716,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
           <div
             onClick={(e) => {
               e.stopPropagation();
-              setNsfwRevealed(true);
+              revealNsfw();
             }}
             style={{
               position: 'absolute',
@@ -1204,7 +1206,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
             <span>{commentCount}</span>
           </button>
 
-          {(post.type === 'video' || post.type === 'reel') && post.views > 0 && (
+          {(post.type === 'video' || post.type === 'reel' || post.type === 'snip') && post.views > 0 && (
             <span className="views-count" aria-label="Views">
               <Eye size={18} />
               {post.views}

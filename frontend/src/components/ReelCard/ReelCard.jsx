@@ -1,25 +1,35 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreVertical, AlertCircle } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreVertical, AlertCircle, ShoppingBag, Download, Tag, Lock, UserPlus, X, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
+import { useNsfw } from '../../context/NsfwContext';
 
 export default function ReelCard({ reel, onDeleteSuccess }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, updateUserData } = useAuth();
   const navigate = useNavigate();
   const videoRef = useRef(null);
+  const containerRef = useRef(null);
 
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with posts');
   const [showMenu, setShowMenu] = useState(false);
   const [isArchivedState, setIsArchivedState] = useState(reel.isArchived || false);
   const [isArchiving, setIsArchiving] = useState(false);
-  const [nsfwRevealed, setNsfwRevealed] = useState(false);
+  const [previewFileModal, setPreviewFileModal] = useState(null);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [followUnlockModal, setFollowUnlockModal] = useState(null);
+  const [productDownloadCounts, setProductDownloadCounts] = useState({});
+  const [isFollowingAuthorState, setIsFollowingAuthorState] = useState(
+    user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
+  );
+  const { nsfwRevealed, revealNsfw } = useNsfw();
 
-  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
+  const isOwnContent = isAuthenticated && user?._id && reel.author?._id === user._id;
+  const isBlurred = Boolean(reel.isNSFW) && !isOwnContent && (isAuthenticated ? !user?.showNSFW : !nsfwRevealed);
 
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -68,6 +78,31 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
     navigate('/snips', { state: { activeId: reel._id } });
   };
 
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = node.querySelector('video');
+          if (!video) return;
+          if (entry.isIntersecting) {
+            video.play().catch((err) => {
+              console.log('Autoplay blocked:', err);
+            });
+            setIsPlaying(true);
+          } else {
+            video.pause();
+            setIsPlaying(false);
+          }
+        });
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   const handleArchiveToggle = async (e) => {
     e.stopPropagation();
     try {
@@ -107,6 +142,74 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
     e.stopPropagation();
     setShowMenu(false);
     navigate('/create-post', { state: { editPost: reel } });
+  };
+
+  const handleDownloadFileClick = async (prod, e) => {
+    if (e) e.stopPropagation();
+    const isSelf = user && reel.author && user._id.toString() === reel.author._id.toString();
+    const isFollowing = isSelf || isFollowingAuthorState || (
+      user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
+    );
+    if (prod.requireFollow && !isFollowing) {
+      setFollowUnlockModal(prod);
+      return;
+    }
+    try {
+      const res = await client.post(`/posts/${reel._id}/products/${prod._id}/download`);
+      if (res.data.success) {
+        setProductDownloadCounts(prev => ({ ...prev, [prod._id]: res.data.downloadCount }));
+        const fileUrl = res.data.fileUrl || prod.fileUrl;
+        if (fileUrl) window.open(getFullMediaUrl(fileUrl), '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      if (prod.fileUrl) window.open(getFullMediaUrl(prod.fileUrl), '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleFollowAndDownload = async () => {
+    if (!isAuthenticated) {
+      setDrawerAction('follow creators to unlock free downloads');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
+    try {
+      if (reel.author?._id) {
+        await client.post(`/users/${reel.author._id}/follow`);
+        setIsFollowingAuthorState(true);
+      }
+      const prodToDownload = followUnlockModal;
+      setFollowUnlockModal(null);
+      if (prodToDownload) handleDownloadFileClick(prodToDownload);
+    } catch (err) {
+      console.error('Follow error:', err);
+    }
+  };
+
+  const handleProductWishlistToggle = async (productId, e) => {
+    if (e) e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('add products to wishlist');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
+    try {
+      const res = await client.post('/products/wishlist', { postId: reel._id, productId });
+      if (res.data.success) {
+        const updatedSavedProducts = [...(user.savedProducts || [])];
+        if (res.data.isSaved) {
+          updatedSavedProducts.push({ post: reel._id, productId });
+        } else {
+          const idx = updatedSavedProducts.findIndex(
+            item => item.post?.toString() === reel._id.toString() && item.productId?.toString() === productId.toString()
+          );
+          if (idx > -1) updatedSavedProducts.splice(idx, 1);
+        }
+        updateUserData({ ...user, savedProducts: updatedSavedProducts });
+      }
+    } catch (err) {
+      console.error('Error toggling wishlist:', err);
+    }
   };
 
   const handleLike = async (e) => {
@@ -314,12 +417,12 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
       </div>
 
       {/* Media Block */}
-      <div className="reel-media-container" onClick={handleMediaClick} style={{ position: 'relative', overflow: 'hidden' }}>
+      <div ref={containerRef} className="reel-media-container" onClick={handleMediaClick} style={{ position: 'relative', overflow: 'hidden' }}>
         {isBlurred && (
           <div
             onClick={(e) => {
               e.stopPropagation();
-              setNsfwRevealed(true);
+              revealNsfw();
             }}
             style={{
               position: 'absolute',
@@ -357,6 +460,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
               loop
               muted={isMuted}
               playsInline
+              onTimeUpdate={(e) => { const v = e.target; if (v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }}
               style={isBlurred ? { filter: 'blur(30px) scale(1.05)' } : {}}
             />
             {!isPlaying && !isBlurred && (
@@ -380,7 +484,78 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
           </div>
         )}
         <div className="reel-badge">Snip</div>
+        {isPlaying && !isBlurred && (
+          <div
+            className="video-progress-hitzone"
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = e.currentTarget.getBoundingClientRect();
+              const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+              if (videoRef.current && videoRef.current.duration) {
+                videoRef.current.currentTime = percent * videoRef.current.duration;
+                setVideoProgress(percent * 100);
+              }
+            }}
+          >
+            <div className="video-progress-track">
+              <div className="video-progress-fill" style={{ width: `${videoProgress}%` }} />
+            </div>
+          </div>
+        )}
       </div>
+
+      {reel.products && reel.products.length > 0 && (
+        <div className="products-scroll-container" style={{ display: 'flex', gap: '6px', overflowX: 'auto', padding: '8px 6px', margin: '8px 0' }}>
+          {reel.products.map((prod, idx) => {
+            const isProductSaved = (user?.savedProducts || []).some(
+              item => item.productId?.toString() === prod._id?.toString()
+            );
+            const downloadCnt = productDownloadCounts[prod._id] !== undefined ? productDownloadCounts[prod._id] : (prod.downloadCount || 0);
+            const isPDF = prod.fileType === 'PDF' || (prod.fileName && prod.fileName.toLowerCase().endsWith('.pdf'));
+            const isImageFile = ['PNG','JPG','JPEG','WEBP'].includes(prod.fileType);
+            const canPreview = !!prod.fileUrl && (isPDF || isImageFile);
+            const handleCardClick = () => {
+              if (prod.fileUrl) handleDownloadFileClick(prod);
+              else if (prod.link) window.open(prod.link, '_blank', 'noopener,noreferrer');
+            };
+            return (
+              <div key={prod._id || idx} className="product-scroll-card" onClick={handleCardClick}
+                style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '6px', width: '220px', minWidth: '220px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', position: 'relative', flexShrink: 0, cursor: 'pointer', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', width: '50px', height: '50px', flexShrink: 0, borderRadius: '6px', overflow: 'hidden', background: '#0f0f12', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {prod.imageUrl ? (
+                    <img src={getFullMediaUrl(prod.imageUrl)} alt={prod.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <>{prod.fileUrl ? (prod.requireFollow ? <Lock size={18} color="#eab308" /> : <Download size={18} color="#22c55e" />) : <ShoppingBag size={18} color="#71717a" />}</>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: '600', color: '#e4e4e7', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prod.title}</p>
+                  {prod.fileUrl ? (
+                    <span style={{ fontSize: '9px', color: '#22c55e', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                      <Download size={9} /> {downloadCnt}
+                    </span>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: prod.price === 'FREE' ? '#22c55e' : 'var(--accent-indigo)' }}>{prod.price}</span>
+                      {prod.originalPrice && <span style={{ fontSize: '10px', textDecoration: 'line-through', color: '#52525b' }}>{prod.originalPrice}</span>}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                  {canPreview && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setPreviewFileModal(prod); }} style={{ background: 'none', border: 'none', padding: '4px', color: '#a1a1aa', cursor: 'pointer' }}>
+                      <Eye size={13} />
+                    </button>
+                  )}
+                  <button type="button" onClick={(e) => handleProductWishlistToggle(prod._id, e)} style={{ background: 'none', border: 'none', padding: '4px', color: isProductSaved ? '#f43f5e' : '#3f3f46', cursor: 'pointer' }}>
+                    <Heart size={14} fill={isProductSaved ? '#f43f5e' : 'none'} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Action Bar */}
       <div className="reel-actions">
@@ -666,6 +841,32 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
           letter-spacing: 0.05em;
           box-shadow: 0 4px 12px rgba(255, 143, 0, 0.4);
           line-height: 1;
+        }
+
+        .video-progress-hitzone {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 24px;
+          z-index: 6;
+          cursor: pointer;
+          display: flex;
+          align-items: flex-end;
+        }
+
+        .video-progress-track {
+          position: relative;
+          width: 100%;
+          height: 3px;
+          background: rgba(255,255,255,0.2);
+        }
+
+        .video-progress-fill {
+          height: 100%;
+          background: #ffffff;
+          transition: width 0.25s linear;
+          border-radius: 0 2px 2px 0;
         }
       `}</style>
       

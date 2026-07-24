@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NsfwProvider } from './context/NsfwContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { UploadProvider } from './context/UploadContext';
 import { ChatAuthProvider } from './context/ChatContext';
@@ -163,6 +164,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+      <NsfwProvider>
         <ChatAuthProvider>
           <UploadProvider>
             <NotificationProvider>
@@ -170,6 +172,7 @@ function App() {
             </NotificationProvider>
           </UploadProvider>
         </ChatAuthProvider>
+      </NsfwProvider>
       </AuthProvider>
     </Router>
   );

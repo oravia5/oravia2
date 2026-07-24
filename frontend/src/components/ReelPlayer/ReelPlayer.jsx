@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreVertical } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreVertical, Lock, Download, ShoppingBag } from 'lucide-react';
 import { queueView } from '../../utils/viewTracker';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import LikesSheet from '../LikesSheet/LikesSheet';
+import { useNsfw } from '../../context/NsfwContext';
 
 export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, updateUserData } = useAuth();
   const navigate = useNavigate();
   
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
@@ -19,9 +20,16 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [isArchivedState, setIsArchivedState] = useState(reel.isArchived || false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
-  const [nsfwRevealed, setNsfwRevealed] = useState(false);
+  const [previewFileModal, setPreviewFileModal] = useState(null);
+  const [followUnlockModal, setFollowUnlockModal] = useState(null);
+  const [productDownloadCounts, setProductDownloadCounts] = useState({});
+  const [isFollowingAuthorState, setIsFollowingAuthorState] = useState(
+    user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
+  );
+  const { nsfwRevealed, revealNsfw } = useNsfw();
 
-  const isBlurred = Boolean(reel.isNSFW) && !nsfwRevealed && (!isAuthenticated || !user?.showNSFW);
+  const isOwnContent = isAuthenticated && user?._id && reel.author?._id === user._id;
+  const isBlurred = Boolean(reel.isNSFW) && !isOwnContent && (isAuthenticated ? !user?.showNSFW : !nsfwRevealed);
   
   const parseCaptionText = (text) => {
     if (!text) return '';
@@ -141,7 +149,75 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
     navigate('/create-post', { state: { editPost: reel } });
   };
 
-  const handleLike = async (e) => {
+  const handleDownloadFileClick = async (prod, e) => {
+    if (e) e.stopPropagation();
+    const isSelf = user && reel.author && user._id.toString() === reel.author._id.toString();
+    const isFollowing = isSelf || isFollowingAuthorState || (
+      user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
+    );
+    if (prod.requireFollow && !isFollowing) {
+      setFollowUnlockModal(prod);
+      return;
+    }
+    try {
+      const res = await client.post(`/posts/${reel._id}/products/${prod._id}/download`);
+      if (res.data.success) {
+        setProductDownloadCounts(prev => ({ ...prev, [prod._id]: res.data.downloadCount }));
+        const fileUrl = res.data.fileUrl || prod.fileUrl;
+        if (fileUrl) window.open(getFullMediaUrl(fileUrl), '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      if (prod.fileUrl) window.open(getFullMediaUrl(prod.fileUrl), '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleFollowAndDownload = async () => {
+    if (!isAuthenticated) {
+      setDrawerAction('follow creators to unlock free downloads');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
+    try {
+      if (reel.author?._id) {
+        await client.post(`/users/${reel.author._id}/follow`);
+        setIsFollowingAuthorState(true);
+      }
+      const prodToDownload = followUnlockModal;
+      setFollowUnlockModal(null);
+      if (prodToDownload) handleDownloadFileClick(prodToDownload);
+    } catch (err) {
+      console.error('Follow error:', err);
+    }
+  };
+
+  const handleProductWishlistToggle = async (productId, e) => {
+    if (e) e.stopPropagation();
+    if (!isAuthenticated) {
+      setDrawerAction('add products to wishlist');
+      setIsAuthDrawerOpen(true);
+      return;
+    }
+    try {
+      const res = await client.post('/products/wishlist', { postId: reel._id, productId });
+      if (res.data.success) {
+        const updatedSavedProducts = [...(user.savedProducts || [])];
+        if (res.data.isSaved) {
+          updatedSavedProducts.push({ post: reel._id, productId });
+        } else {
+          const idx = updatedSavedProducts.findIndex(
+            item => item.post?.toString() === reel._id.toString() && item.productId?.toString() === productId.toString()
+          );
+          if (idx > -1) updatedSavedProducts.splice(idx, 1);
+        }
+        updateUserData({ ...user, savedProducts: updatedSavedProducts });
+      }
+    } catch (err) {
+      console.error('Error toggling wishlist:', err);
+    }
+  };
+
+    const handleLike = async (e) => {
     e.stopPropagation();
     if (!isAuthenticated) {
       setDrawerAction('like snips');
@@ -250,7 +326,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         <div
           onClick={(e) => {
             e.stopPropagation();
-            setNsfwRevealed(true);
+            revealNsfw();
           }}
           style={{
             position: 'absolute',
@@ -441,6 +517,59 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         )}
       </div>
 
+      <div className="reel-bottom-stack">
+      {reel.products && reel.products.length > 0 && (
+        <div className="reel-products-row" onClick={(e) => e.stopPropagation()}>
+          {reel.products.map((prod, idx) => {
+            const isProductSaved = (user?.savedProducts || []).some(
+              item => item.productId?.toString() === prod._id?.toString()
+            );
+            const downloadCnt = productDownloadCounts[prod._id] !== undefined ? productDownloadCounts[prod._id] : (prod.downloadCount || 0);
+            const isPDF = prod.fileType === 'PDF' || (prod.fileName && prod.fileName.toLowerCase().endsWith('.pdf'));
+            const isImageFile = ['PNG','JPG','JPEG','WEBP'].includes(prod.fileType);
+            const canPreview = !!prod.fileUrl && (isPDF || isImageFile);
+            const handleCardClick = () => {
+              if (prod.fileUrl) handleDownloadFileClick(prod);
+              else if (prod.link) window.open(prod.link, '_blank', 'noopener,noreferrer');
+            };
+            return (
+              <div key={prod._id || idx} className="reel-product-card" onClick={handleCardClick}>
+                <div className="reel-product-thumb">
+                  {prod.imageUrl ? (
+                    <img src={getFullMediaUrl(prod.imageUrl)} alt={prod.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <>{prod.fileUrl ? (prod.requireFollow ? <Lock size={18} color="#eab308" /> : <Download size={18} color="#22c55e" />) : <ShoppingBag size={18} color="#71717a" />}</>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: '600', color: '#e4e4e7', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prod.title}</p>
+                  {prod.fileUrl ? (
+                    <span style={{ fontSize: '9px', color: '#22c55e', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                      <Download size={9} /> {downloadCnt}
+                    </span>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: prod.price === 'FREE' ? '#22c55e' : 'var(--accent-indigo)' }}>{prod.price}</span>
+                      {prod.originalPrice && <span style={{ fontSize: '10px', textDecoration: 'line-through', color: '#52525b' }}>{prod.originalPrice}</span>}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                  {canPreview && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setPreviewFileModal(prod); }} style={{ background: 'none', border: 'none', padding: '4px', color: '#a1a1aa', cursor: 'pointer' }}>
+                      <Eye size={13} />
+                    </button>
+                  )}
+                  <button type="button" onClick={(e) => handleProductWishlistToggle(prod._id, e)} style={{ background: 'none', border: 'none', padding: '4px', color: isProductSaved ? '#f43f5e' : '#3f3f46', cursor: 'pointer' }}>
+                    <Heart size={14} fill={isProductSaved ? '#f43f5e' : 'none'} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Details bottom overlay */}
       <div className="reel-bottom-info" onClick={(e) => e.stopPropagation()}>
         <Link 
@@ -484,6 +613,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
             )}
           </div>
         )}
+      </div>
+
       </div>
 
       {/* Floating Comments sheet */}
@@ -633,15 +764,22 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         }
 
         /* Bottom metadata overlay */
-        .reel-bottom-info {
+        .reel-bottom-stack {
           position: absolute;
-          left: 16px;
-          right: 70px;
-          bottom: 20px;
+          bottom: 28px;
+          left: 0;
+          right: 0;
+          display: flex;
+          flex-direction: column-reverse;
+          gap: 8px;
+          z-index: 9;
+        }
+
+        .reel-bottom-info {
+          padding: 0 70px 0 16px;
           display: flex;
           flex-direction: column;
           gap: 8px;
-          z-index: 10;
           color: #fff;
           text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
@@ -665,10 +803,54 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           font-size: 14px;
         }
 
-        .reel-caption {
+.reel-caption {
           font-size: 13px;
           line-height: 1.4;
+          white-space: pre-wrap;
         }
+      
+.reel-products-row {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding: 0 12px;
+          background: transparent;
+          scrollbar-width: none;
+        }
+
+      .reel-products-row::-webkit-scrollbar {
+        display: none;
+      }
+
+      .reel-product-card {
+        flex: 0 0 200px;
+        background: rgba(15, 15, 18, 0.55);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 6px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        overflow: hidden;
+      }
+
+      .reel-product-thumb {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #0f0f12;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
       `}</style>
       <AuthDrawer 
         isOpen={isAuthDrawerOpen} 
