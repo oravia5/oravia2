@@ -409,10 +409,8 @@ export default function CreatePost() {
     if (!prod.title || !prod.title.trim()) errs.title = 'Product name is required';
     if (prod.type === 'affiliate') {
       const numP = prod.isFree ? 0 : parseNumericPrice(prod.price);
-      if (!prod.isFree) {
-        if (!prod.price || !prod.price.toString().trim()) {
-          errs.price = 'Sale Price is required';
-        } else if (isNaN(numP) || numP < 0) {
+      if (!prod.isFree && prod.price && prod.price.toString().trim()) {
+        if (isNaN(numP) || numP < 0) {
           errs.price = 'Enter a valid numeric price';
         }
       }
@@ -1170,7 +1168,7 @@ export default function CreatePost() {
                                   {/* Sale Price Input */}
                                   <div style={{ flex: 1, position: 'relative' }}>
                                     <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#a1a1aa', marginBottom: '3px' }}>
-                                      SALE PRICE ({item.currency || '₹'}) <span style={{ color: '#ef4444' }}>*</span>
+                                      SALE PRICE ({item.currency || '₹'}) <span style={{ fontSize: '9px', fontWeight: '400', color: '#71717a' }}>(Optional)</span>
                                     </label>
                                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                       <span style={{ position: 'absolute', left: '10px', color: item.isFree ? '#22c55e' : 'var(--accent-indigo)', fontWeight: '700', fontSize: '13px' }}>
