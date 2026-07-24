@@ -760,7 +760,7 @@ export default function CreatePost() {
             }}
             disabled={uploading}
           >
-            Capture Live Camera
+            {isReel ? 'Capture Video' : 'Capture Image'}
           </button>
         </div>
       )}
