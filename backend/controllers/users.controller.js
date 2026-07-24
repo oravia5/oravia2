@@ -697,3 +697,92 @@ export const unblockUser = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error unblocking user' });
   }
 };
+
+/**
+ * @desc    Get suggested creators to follow (Active Creators + Random Freshness)
+ * @route   GET /api/users/suggested
+ * @access  Public (Optional Auth)
+ */
+export const getSuggestedUsers = async (req, res) => {
+  try {
+    let excludeIds = [];
+    let myFollowing = [];
+    if (req.user) {
+      const loggedUser = await User.findById(req.user._id);
+      if (loggedUser) {
+        excludeIds.push(loggedUser._id);
+        myFollowing = (loggedUser.following || []).map(id => id.toString());
+        excludeIds.push(...loggedUser.following);
+        excludeIds.push(...(loggedUser.blockedUsers || []));
+      }
+    }
+
+    // 1. Get active creator IDs who posted recently (last 30 days or all-time posts)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    let activeAuthorIds = await Post.distinct('author', {
+      isArchived: { $ne: true },
+      status: 'published',
+      createdAt: { $gte: thirtyDaysAgo }
+    });
+
+    if (!activeAuthorIds || activeAuthorIds.length === 0) {
+      activeAuthorIds = await Post.distinct('author', {
+        isArchived: { $ne: true },
+        status: 'published'
+      });
+    }
+
+    let queryIds = activeAuthorIds.filter(id => !excludeIds.some(ex => ex.toString() === id.toString()));
+
+    let users = [];
+    if (queryIds.length > 0) {
+      users = await User.find({ _id: { $in: queryIds } })
+        .select('_id username displayName avatarUrl bio followers following')
+        .lean();
+    }
+
+    // Fallback if less than 6 active creators found
+    if (users.length < 6) {
+      const additionalUsers = await User.find({ _id: { $nin: [...excludeIds, ...users.map(u => u._id)] } })
+        .select('_id username displayName avatarUrl bio followers following')
+        .limit(15)
+        .lean();
+      users = [...users, ...additionalUsers];
+    }
+
+    // Fisher-Yates Random Shuffle for Freshness
+    for (let i = users.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [users[i], users[j]] = [users[j], users[i]];
+    }
+
+    const selected = users.slice(0, 8).map(u => {
+      const mutuals = (u.followers || []).filter(fId => myFollowing.includes(fId.toString()));
+      let reasonText = 'Active Creator';
+      if (mutuals.length > 0) {
+        reasonText = `Followed by ${mutuals.length} connection${mutuals.length > 1 ? 's' : ''}`;
+      } else if (u.followers?.length > 0) {
+        reasonText = `${u.followers.length} follower${u.followers.length > 1 ? 's' : ''}`;
+      }
+
+      return {
+        _id: u._id,
+        username: u.username,
+        displayName: u.displayName || u.username,
+        avatarUrl: u.avatarUrl || '',
+        bio: u.bio || '',
+        reasonText,
+        isFollowing: false
+      };
+    });
+
+    res.json({
+      success: true,
+      data: selected
+    });
+  } catch (error) {
+    console.error('Get suggested users error:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching suggestions' });
+  }
+};
+

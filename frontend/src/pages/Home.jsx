@@ -4,6 +4,7 @@ import { Sparkles, Search, Bell } from 'lucide-react';
 import client from '../api/client';
 import PostCard from '../components/PostCard/PostCard';
 import ReelCard from '../components/ReelCard/ReelCard';
+import SuggestedCreators from '../components/SuggestedCreators/SuggestedCreators';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import OraviaLogo from '../components/OraviaLogo/OraviaLogo';
@@ -242,10 +243,10 @@ export default function Home() {
           <div className="empty-feed-container">
             <div className="empty-emoji">👥</div>
             <h3>Not following anyone yet</h3>
-            <p>Follow creators to see their posts and reels in your Following feed!</p>
-            <button className="btn-primary" style={{ marginTop: '16px', padding: '10px 24px', borderRadius: '20px', fontSize: '14px', fontWeight: '600' }} onClick={() => navigate('/search')}>
-              Find Creators
-            </button>
+            <p>Follow active creators below to see their posts and snips in your Following feed!</p>
+            <div style={{ width: '100%', maxWidth: '500px', margin: '16px auto 0' }}>
+              <SuggestedCreators />
+            </div>
           </div>
         ) : activeTab === 'near-you' && (!isAuthenticated || locationNotSet) && !guestCityQuery ? (
           <div className="empty-feed-container">
@@ -331,18 +332,23 @@ export default function Home() {
               </div>
             )}
 
-            {displayFeed.map((item) => {
-              if (item.type === 'reel') {
-                return <ReelCard key={item._id} reel={item} onDeleteSuccess={handleDeletePost} />;
-              }
+            {displayFeed.map((item, index) => {
+              const isReel = item.type === 'reel';
               return (
-                <PostCard 
-                  key={item._id} 
-                  post={item} 
-                  onDeleteSuccess={handleDeletePost} 
-                />
+                <React.Fragment key={item._id}>
+                  {isReel ? (
+                    <ReelCard reel={item} onDeleteSuccess={handleDeletePost} />
+                  ) : (
+                    <PostCard 
+                      post={item} 
+                      onDeleteSuccess={handleDeletePost} 
+                    />
+                  )}
+                  {index === 1 && <SuggestedCreators />}
+                </React.Fragment>
               );
             })}
+            {displayFeed.length === 1 && <SuggestedCreators />}
             
             {/* Infinite Scroll Loader marker */}
             {hasMore && (

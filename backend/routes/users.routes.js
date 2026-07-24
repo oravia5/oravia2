@@ -7,6 +7,7 @@ import {
   getUserFollowers,
   getUserFollowing,
   searchUsers,
+  getSuggestedUsers,
   changePassword,
   blockUser,
   unblockUser,
@@ -17,6 +18,7 @@ import { validateUploadLimit, profileUpload } from '../middleware/upload.middlew
 const router = express.Router();
 
 router.get('/search', optionalAuth, searchUsers);
+router.get('/suggested', optionalAuth, getSuggestedUsers);
 router.post('/change-password', protect, changePassword);
 router.get('/:username', optionalAuth, getUserProfile);
 router.put('/me', protect, profileUpload, validateUploadLimit, updateProfile);
