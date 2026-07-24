@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreVertical, Lock, Download, ShoppingBag } from 'lucide-react';
@@ -892,7 +893,136 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         justify-content: center;
       }
 
-      `}</style>
+      {/* ── Follow to Unlock Modal ── */}
+      {followUnlockModal && createPortal(
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#121215',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '340px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.8)'
+          }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <Lock size={22} color="#eab308" />
+            </div>
+            <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: '0 0 6px' }}>Follow to Unlock Download</h4>
+            <p style={{ fontSize: '13px', color: '#a1a1aa', margin: '0 0 16px', lineHeight: '1.4' }}>
+              Follow <strong>@{reel.author?.username}</strong> to instantly unlock and download <strong>{followUnlockModal.title}</strong> for free!
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setFollowUnlockModal(null)}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#aaa', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleFollowAndDownload}
+                style={{ flex: 1.4, padding: '10px', borderRadius: '8px', background: 'var(--accent-indigo)', border: 'none', color: '#fff', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <span>Follow & Download</span>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── File Preview Modal ── */}
+      {previewFileModal && createPortal(
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          zIndex: 999999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#0d0d10',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '16px',
+            maxWidth: '560px',
+            width: '100%',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.9)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#121216' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-indigo)', background: 'rgba(99,102,241,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                  {previewFileModal.fileType || 'FILE'}
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {previewFileModal.title}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewFileModal(null)}
+                style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: '4px' }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ flex: 1, minHeight: '300px', background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {previewFileModal.fileType === 'PDF' || (previewFileModal.fileName && previewFileModal.fileName.toLowerCase().endsWith('.pdf')) ? (
+                <iframe
+                  src={getFullMediaUrl(previewFileModal.fileUrl)}
+                  title="PDF Preview"
+                  style={{ width: '100%', height: '400px', border: 'none' }}
+                />
+              ) : (
+                <img
+                  src={getFullMediaUrl(previewFileModal.fileUrl)}
+                  alt="File Preview"
+                  style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                />
+              )}
+            </div>
+            <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', background: '#121216' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const prod = previewFileModal;
+                  setPreviewFileModal(null);
+                  handleDownloadFileClick(prod);
+                }}
+                style={{ background: 'var(--accent-indigo)', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Download size={14} />
+                <span>Download File ({previewFileModal.fileSize || 'Free'})</span>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       <AuthDrawer 
         isOpen={isAuthDrawerOpen} 
         onClose={() => setIsAuthDrawerOpen(false)} 

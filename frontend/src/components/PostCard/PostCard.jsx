@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { queueView } from '../../utils/viewTracker';
 import { getFullMediaUrl } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
@@ -1705,13 +1706,14 @@ export default function PostCard({ post, onDeleteSuccess }) {
       {/* Inline edit post modal removed, routing to standalone CreatePost page instead */}
       
       {/* ── Follow to Unlock Modal ── */}
-      {followUnlockModal && (
+      {followUnlockModal && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.75)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 1000,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          zIndex: 999999,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1752,19 +1754,20 @@ export default function PostCard({ post, onDeleteSuccess }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── File Preview Modal ── */}
-      {previewFileModal && (
+      {previewFileModal && createPortal(
         <div style={{
           position: 'fixed',
           inset: 0,
           background: 'rgba(0,0,0,0.85)',
           backdropFilter: 'blur(10px)',
-          zIndex: 1000,
+          WebkitBackdropFilter: 'blur(10px)',
+          zIndex: 999999,
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           padding: '16px'
@@ -1833,7 +1836,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <AuthDrawer 
