@@ -24,6 +24,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [previewFileModal, setPreviewFileModal] = useState(null);
   const [followUnlockModal, setFollowUnlockModal] = useState(null);
   const [productDownloadCounts, setProductDownloadCounts] = useState({});
+  const [productWishlistCounts, setProductWishlistCounts] = useState({});
   const [isFollowingAuthorState, setIsFollowingAuthorState] = useState(
     user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
   );
@@ -238,6 +239,12 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
     try {
       const res = await client.post('/products/wishlist', { postId: reel._id, productId });
       if (res.data.success) {
+        if (res.data.wishlistCount !== undefined) {
+          setProductWishlistCounts(prev => ({
+            ...prev,
+            [productId]: res.data.wishlistCount
+          }));
+        }
         const updatedSavedProducts = [...(user.savedProducts || [])];
         if (res.data.isSaved) {
           updatedSavedProducts.push({ post: reel._id, productId });
@@ -563,6 +570,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
               item => item.productId?.toString() === prod._id?.toString()
             );
             const downloadCnt = productDownloadCounts[prod._id] !== undefined ? productDownloadCounts[prod._id] : (prod.downloadCount || 0);
+            const wishlistCnt = productWishlistCounts[prod._id] !== undefined ? productWishlistCounts[prod._id] : (prod.wishlistCount || 0);
             const isPDF = prod.fileType === 'PDF' || (prod.fileName && prod.fileName.toLowerCase().endsWith('.pdf'));
             const isImageFile = ['PNG','JPG','JPEG','WEBP'].includes(prod.fileType);
             const canPreview = !!prod.fileUrl && (isPDF || isImageFile);
@@ -609,8 +617,11 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
                       <Eye size={13} />
                     </button>
                   )}
-                  <button type="button" onClick={(e) => handleProductWishlistToggle(prod._id, e)} style={{ background: 'none', border: 'none', padding: '4px', color: isProductSaved ? '#f43f5e' : '#3f3f46', cursor: 'pointer' }}>
+                  <button type="button" onClick={(e) => handleProductWishlistToggle(prod._id, e)} style={{ background: 'none', border: 'none', padding: '4px 6px', display: 'flex', alignItems: 'center', gap: '3px', color: isProductSaved ? '#f43f5e' : '#71717a', cursor: 'pointer' }}>
                     <Heart size={14} fill={isProductSaved ? '#f43f5e' : 'none'} />
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: isProductSaved ? '#f43f5e' : '#a1a1aa' }}>
+                      {wishlistCnt}
+                    </span>
                   </button>
                 </div>
               </div>

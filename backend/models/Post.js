@@ -62,6 +62,7 @@ const postSchema = new mongoose.Schema(
         fileSize: { type: String, default: '' },
         fileType: { type: String, default: '' },
         downloadCount: { type: Number, default: 0 },
+        wishlistCount: { type: Number, default: 0 },
         requireFollow: { type: Boolean, default: false },
       }
     ],

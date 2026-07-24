@@ -13,8 +13,8 @@ export const toggleWishlistProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Post not found' });
     }
 
-    const productExists = post.products.some(p => p._id.toString() === productId.toString());
-    if (!productExists) {
+    const product = post.products.find(p => p._id.toString() === productId.toString());
+    if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found in this post' });
     }
 
@@ -28,16 +28,19 @@ export const toggleWishlistProduct = async (req, res) => {
 
     if (existingIndex > -1) {
       user.savedProducts.splice(existingIndex, 1);
+      product.wishlistCount = Math.max(0, (product.wishlistCount || 1) - 1);
       isSaved = false;
       message = 'Product removed from wishlist';
     } else {
       user.savedProducts.push({ post: postId, productId });
+      product.wishlistCount = (product.wishlistCount || 0) + 1;
       isSaved = true;
       message = 'Product saved to wishlist';
     }
 
     await user.save();
-    res.json({ success: true, isSaved, message });
+    await post.save();
+    res.json({ success: true, isSaved, wishlistCount: product.wishlistCount, message });
   } catch (err) {
     console.error('Error toggling wishlist:', err);
     res.status(500).json({ success: false, message: 'Server error toggling wishlist' });

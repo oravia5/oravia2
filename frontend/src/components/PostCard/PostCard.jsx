@@ -92,6 +92,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const [previewFileModal, setPreviewFileModal] = useState(null);
   const [followUnlockModal, setFollowUnlockModal] = useState(null);
   const [productDownloadCounts, setProductDownloadCounts] = useState({});
+  const [productWishlistCounts, setProductWishlistCounts] = useState({});
   const [isFollowingAuthorState, setIsFollowingAuthorState] = useState(
     user && post.author && (user.following || []).some(id => id.toString() === post.author._id.toString())
   );
@@ -180,6 +181,12 @@ export default function PostCard({ post, onDeleteSuccess }) {
     try {
       const res = await client.post('/products/wishlist', { postId: post._id, productId });
       if (res.data.success) {
+        if (res.data.wishlistCount !== undefined) {
+          setProductWishlistCounts(prev => ({
+            ...prev,
+            [productId]: res.data.wishlistCount
+          }));
+        }
         // Update user state so that the heart icon changes instantly!
         const updatedSavedProducts = [...(user.savedProducts || [])];
         if (res.data.isSaved) {
@@ -1018,6 +1025,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
               ? productDownloadCounts[prod._id] 
               : (prod.downloadCount || 0);
 
+            const wishlistCnt = productWishlistCounts[prod._id] !== undefined
+              ? productWishlistCounts[prod._id]
+              : (prod.wishlistCount || 0);
+
             const isPDF = prod.fileType === 'PDF' || (prod.fileName && prod.fileName.toLowerCase().endsWith('.pdf'));
             const isImageFile = prod.fileType === 'PNG' || prod.fileType === 'JPG' || prod.fileType === 'JPEG' || prod.fileType === 'WEBP';
             const canPreview = isDownload && (isPDF || isImageFile);
@@ -1190,17 +1201,21 @@ export default function PostCard({ post, onDeleteSuccess }) {
                     style={{
                       background: 'none',
                       border: 'none',
-                      padding: '4px',
+                      padding: '4px 6px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: isProductSaved ? '#f43f5e' : '#3f3f46',
+                      gap: '3px',
+                      color: isProductSaved ? '#f43f5e' : '#71717a',
                       cursor: 'pointer',
                       transition: 'color 0.15s ease'
                     }}
                     title={isProductSaved ? "Remove from Wishlist" : "Save to Wishlist"}
                   >
                     <Heart size={14} fill={isProductSaved ? '#f43f5e' : 'none'} />
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: isProductSaved ? '#f43f5e' : '#a1a1aa' }}>
+                      {wishlistCnt}
+                    </span>
                   </button>
                 </div>
               </div>
