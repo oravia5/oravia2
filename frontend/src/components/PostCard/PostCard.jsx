@@ -158,6 +158,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
       const prodToDownload = followUnlockModal;
       setFollowUnlockModal(null);
       if (prodToDownload) {
+        const isPDF = prodToDownload.fileType === 'PDF' || (prodToDownload.fileName && prodToDownload.fileName.toLowerCase().endsWith('.pdf'));
+        const isImageFile = prodToDownload.fileType === 'PNG' || prodToDownload.fileType === 'JPG' || prodToDownload.fileType === 'JPEG' || prodToDownload.fileType === 'WEBP';
+        if (isPDF || isImageFile) {
+          setPreviewFileModal(prodToDownload);
+        }
         triggerActualDownload(prodToDownload);
       }
     } catch (err) {
