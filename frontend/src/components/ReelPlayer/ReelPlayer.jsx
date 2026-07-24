@@ -893,6 +893,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         justify-content: center;
       }
 
+      `}</style>
+
       {/* ── Follow to Unlock Modal ── */}
       {followUnlockModal && createPortal(
         <div style={{

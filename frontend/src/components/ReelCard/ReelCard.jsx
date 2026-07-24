@@ -920,8 +920,9 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
           height: 100%;
           background: #ffffff;
           transition: width 0.25s linear;
-          border-radius: 0 2px 2px 0;
         }
+      `}</style>
+      
       {/* ── Follow to Unlock Modal ── */}
       {followUnlockModal && createPortal(
         <div style={{
