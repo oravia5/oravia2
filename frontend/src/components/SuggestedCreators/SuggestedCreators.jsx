@@ -28,8 +28,8 @@ export default function SuggestedCreators({ onFollowChange }) {
         const res = await client.get(`/users/suggested?t=${Date.now()}`);
         if (res.data.success) {
           const pool = res.data.data || [];
-          // Randomly pick 4 from full pool — different every refresh
-          const picked = pickRandom(pool, 4);
+          // Randomly pick 10 from full pool — different every refresh
+          const picked = pickRandom(pool, 10);
           setCreators(picked);
           // Pre-populate following state
           const initialMap = {};
