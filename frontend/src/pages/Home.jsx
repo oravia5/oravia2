@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Search, Bell } from 'lucide-react';
 import client from '../api/client';
@@ -186,6 +186,26 @@ export default function Home() {
     setFeedItems(feedItems.filter(item => item._id !== deletedId));
   };
 
+  // Compute which post indices should show SuggestedCreators
+  // First time: after 2nd post (index 1), then randomly every 4, 6, 8, or 10 posts
+  const suggestedIndices = useMemo(() => {
+    const indices = new Set();
+    const len = feedItems.length;
+    const possibleSteps = [4, 6, 8, 10];
+    if (len >= 2) {
+      indices.add(1); // Always after 2nd post
+      let current = 1;
+      while (current < len - 1) {
+        const step = possibleSteps[Math.floor(Math.random() * possibleSteps.length)];
+        current += step;
+        if (current < len) {
+          indices.add(current);
+        }
+      }
+    }
+    return indices;
+  }, [feedItems.length]);
+
   return (
     <div className="page-container">
       {/* Auto-hide Top Bar: Header + Sticky Tabs (Instagram-style) */}
@@ -332,7 +352,7 @@ export default function Home() {
               </div>
             )}
 
-            {displayFeed.map((item, index) => {
+            {feedItems.map((item, index) => {
               const isReel = item.type === 'reel';
               return (
                 <React.Fragment key={item._id}>
@@ -344,11 +364,11 @@ export default function Home() {
                       onDeleteSuccess={handleDeletePost} 
                     />
                   )}
-                  {index === 1 && <SuggestedCreators />}
+                  {suggestedIndices.has(index) && <SuggestedCreators />}
                 </React.Fragment>
               );
             })}
-            {displayFeed.length === 1 && <SuggestedCreators />}
+            {feedItems.length === 1 && <SuggestedCreators />}
             
             {/* Infinite Scroll Loader marker */}
             {hasMore && (
