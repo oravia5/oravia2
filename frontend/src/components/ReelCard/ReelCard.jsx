@@ -179,7 +179,11 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
       }
     } catch (err) {
       console.error('Download error:', err);
-      if (prod.fileUrl) window.open(getFullMediaUrl(prod.fileUrl), '_blank', 'noopener,noreferrer');
+      if (err.response?.status === 403 || err.response?.data?.requireFollow) {
+        setFollowUnlockModal(prod);
+      } else {
+        alert(err.response?.data?.message || 'Download failed. Please make sure you are following the author.');
+      }
     }
   };
 
@@ -569,7 +573,18 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
                   {canPreview && (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setPreviewFileModal(prod); }} style={{ background: 'none', border: 'none', padding: '4px', color: '#a1a1aa', cursor: 'pointer' }}>
+                    <button type="button" onClick={(e) => {
+                      e.stopPropagation();
+                      const isSelf = user && reel.author && user._id.toString() === reel.author._id.toString();
+                      const isFollowing = isSelf || isFollowingAuthorState || (
+                        user && reel.author && (user.following || []).some(id => id.toString() === reel.author._id.toString())
+                      );
+                      if (prod.requireFollow && !isFollowing) {
+                        setFollowUnlockModal(prod);
+                        return;
+                      }
+                      setPreviewFileModal(prod);
+                    }} style={{ background: 'none', border: 'none', padding: '4px', color: '#a1a1aa', cursor: 'pointer' }}>
                       <Eye size={13} />
                     </button>
                   )}

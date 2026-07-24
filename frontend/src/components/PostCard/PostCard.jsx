@@ -124,8 +124,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
       }
     } catch (err) {
       console.error('Download error:', err);
-      if (prod.fileUrl) {
-        window.open(getFullMediaUrl(prod.fileUrl), '_blank', 'noopener,noreferrer');
+      if (err.response?.status === 403 || err.response?.data?.requireFollow) {
+        setFollowUnlockModal(prod);
+      } else {
+        alert(err.response?.data?.message || 'Download failed. Please make sure you are following the author.');
       }
     }
   };
@@ -1140,6 +1142,14 @@ export default function PostCard({ post, onDeleteSuccess }) {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        const isSelf = user && post.author && user._id.toString() === post.author._id.toString();
+                        const isFollowing = isSelf || isFollowingAuthorState || (
+                          user && post.author && (user.following || []).some(id => id.toString() === post.author._id.toString())
+                        );
+                        if (prod.requireFollow && !isFollowing) {
+                          setFollowUnlockModal(prod);
+                          return;
+                        }
                         setPreviewFileModal(prod);
                       }}
                       style={{

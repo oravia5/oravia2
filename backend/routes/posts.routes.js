@@ -29,7 +29,7 @@ import { validateUploadLimit, postUpload } from '../middleware/upload.middleware
 const router = express.Router();
 
 router.post('/views/batch', batchIncrementViews);
-router.post('/:id/products/:productId/download', trackProductDownload);
+router.post('/:id/products/:productId/download', optionalAuth, trackProductDownload);
 router.get('/', optionalAuth, getPosts);
 router.get('/feed', optionalAuth, getFeed);
 router.get('/following', protect, getFollowingFeed);

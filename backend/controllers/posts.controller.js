@@ -1365,7 +1365,7 @@ export const unarchivePost = async (req, res) => {
 export const trackProductDownload = async (req, res) => {
   try {
     const { id, productId } = req.params;
-    const post = await Post.findById(id);
+    const post = await Post.findById(id).populate('author', 'followers');
 
     if (!post) {
       return res.status(404).json({ success: false, message: 'Post not found' });
@@ -1374,6 +1374,26 @@ export const trackProductDownload = async (req, res) => {
     const prod = post.products.id(productId);
     if (!prod) {
       return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // Strict backend follow-to-download validation
+    if (prod.requireFollow) {
+      const currentUserId = req.user ? req.user._id.toString() : null;
+      const authorId = post.author ? (post.author._id ? post.author._id.toString() : post.author.toString()) : null;
+      const isAuthor = currentUserId && authorId && currentUserId === authorId;
+      
+      const isFollowing = isAuthor || (
+        currentUserId && post.author && Array.isArray(post.author.followers) &&
+        post.author.followers.some(fId => fId.toString() === currentUserId)
+      );
+
+      if (!isFollowing) {
+        return res.status(403).json({
+          success: false,
+          requireFollow: true,
+          message: 'You must follow the author to download this file'
+        });
+      }
     }
 
     prod.downloadCount = (prod.downloadCount || 0) + 1;
