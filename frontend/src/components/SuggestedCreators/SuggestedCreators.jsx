@@ -15,7 +15,7 @@ export default function SuggestedCreators({ onFollowChange }) {
   useEffect(() => {
     const fetchSuggested = async () => {
       try {
-        const res = await client.get('/users/suggested');
+        const res = await client.get(`/users/suggested?t=${Date.now()}`);
         if (res.data.success) {
           setCreators(res.data.data || []);
           // Pre-populate following state
