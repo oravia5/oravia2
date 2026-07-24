@@ -224,7 +224,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const [commentCount, setCommentCount] = useState(post.commentCount || 0);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(() => sessionStorage.getItem('oravia_sound_enabled') !== 'true');
   const [mediaAspect, setMediaAspect] = useState(null);
 
   // Carousel state
@@ -373,15 +373,32 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
   // Removed inline handleEditSubmit for post modal
 
+  useEffect(() => {
+    const syncSound = () => {
+      const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+      setIsMuted(!soundEnabled);
+      const node = postCardRef.current;
+      if (node) {
+        const video = node.querySelector('video');
+        if (video) {
+          video.muted = !soundEnabled;
+        }
+      }
+    };
+    window.addEventListener('oravia_sound_change', syncSound);
+    return () => window.removeEventListener('oravia_sound_change', syncSound);
+  }, []);
+
   const toggleCarouselVideo = (index) => {
     setVideoPlayingStates(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
   const toggleCarouselMute = (index) => {
     setVideoMutedStates(prev => {
-      const isCurrentlyMuted = prev[index] !== undefined ? prev[index] : true;
+      const isCurrentlyMuted = prev[index] !== undefined ? prev[index] : (sessionStorage.getItem('oravia_sound_enabled') !== 'true');
       const nextMuted = !isCurrentlyMuted;
       sessionStorage.setItem('oravia_sound_enabled', nextMuted ? 'false' : 'true');
+      window.dispatchEvent(new Event('oravia_sound_change'));
       return { ...prev, [index]: nextMuted };
     });
   };
@@ -910,7 +927,18 @@ export default function PostCard({ post, onDeleteSuccess }) {
                 )}
                 <button
                   className="mute-btn"
-                  onClick={() => setIsMuted(!isMuted)}
+                  onClick={() => {
+                    const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+                    const nextSoundEnabled = !soundEnabled;
+                    sessionStorage.setItem('oravia_sound_enabled', nextSoundEnabled ? 'true' : 'false');
+                    setIsMuted(!nextSoundEnabled);
+                    const node = postCardRef.current;
+                    if (node) {
+                      const video = node.querySelector('video');
+                      if (video) video.muted = !nextSoundEnabled;
+                    }
+                    window.dispatchEvent(new Event('oravia_sound_change'));
+                  }}
                   aria-label={isMuted ? 'Unmute' : 'Mute'}
                 >
                   <Volume2 size={16} color={isMuted ? '#ef4444' : '#22c55e'} />

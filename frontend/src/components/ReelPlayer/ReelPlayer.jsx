@@ -96,6 +96,18 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
     }
   }, [isActive, isBlurred]);
 
+  useEffect(() => {
+    const syncSound = () => {
+      const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+      setIsMuted(!soundEnabled);
+      if (videoRef.current) {
+        videoRef.current.muted = !soundEnabled;
+      }
+    };
+    window.addEventListener('oravia_sound_change', syncSound);
+    return () => window.removeEventListener('oravia_sound_change', syncSound);
+  }, []);
+
   const handleVideoClick = () => {
     if (showMenu) {
       setShowMenu(false);
@@ -387,6 +399,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
             videoRef.current.muted = nextMuted;
           }
           sessionStorage.setItem('oravia_sound_enabled', nextMuted ? 'false' : 'true');
+          window.dispatchEvent(new Event('oravia_sound_change'));
         }}
         aria-label="Toggle Sound"
       >
