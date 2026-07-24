@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import StorageService from '../services/storage.service.js';
@@ -717,44 +718,16 @@ export const getSuggestedUsers = async (req, res) => {
       }
     }
 
-    // 1. Get active creator IDs who posted recently (last 30 days or all-time posts)
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    let activeAuthorIds = await Post.distinct('author', {
-      isArchived: { $ne: true },
-      status: 'published',
-      createdAt: { $gte: thirtyDaysAgo }
-    });
+    const excludeObjectIds = excludeIds
+      .filter(Boolean)
+      .map(id => new mongoose.Types.ObjectId(id.toString()));
 
-    if (!activeAuthorIds || activeAuthorIds.length === 0) {
-      activeAuthorIds = await Post.distinct('author', {
-        isArchived: { $ne: true },
-        status: 'published'
-      });
-    }
-
-    let queryIds = activeAuthorIds.filter(id => !excludeIds.some(ex => ex.toString() === id.toString()));
-
-    let users = [];
-    if (queryIds.length > 0) {
-      users = await User.find({ _id: { $in: queryIds } })
-        .select('_id username displayName avatarUrl bio followers following')
-        .lean();
-    }
-
-    // Fallback if less than 6 active creators found
-    if (users.length < 6) {
-      const additionalUsers = await User.find({ _id: { $nin: [...excludeIds, ...users.map(u => u._id)] } })
-        .select('_id username displayName avatarUrl bio followers following')
-        .limit(15)
-        .lean();
-      users = [...users, ...additionalUsers];
-    }
-
-    // Fisher-Yates Random Shuffle — full pool shuffle, return ALL so frontend can pick random subset
-    for (let i = users.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [users[i], users[j]] = [users[j], users[i]];
-    }
+    // MongoDB $sample stage selects random users directly from all 71 DB users!
+    const users = await User.aggregate([
+      { $match: { _id: { $nin: excludeObjectIds } } },
+      { $sample: { size: 30 } },
+      { $project: { passwordHash: 0 } }
+    ]);
 
     const mapped = users.map(u => {
       const mutuals = (u.followers || []).filter(fId => myFollowing.includes(fId.toString()));
@@ -777,7 +750,7 @@ export const getSuggestedUsers = async (req, res) => {
 
     res.json({
       success: true,
-      data: mapped   // Return full shuffled pool, frontend picks random 4
+      data: mapped
     });
   } catch (error) {
     console.error('Get suggested users error:', error);
