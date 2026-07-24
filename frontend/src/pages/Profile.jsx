@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Grid, Film, Bookmark, AlertCircle, Folder, ArrowLeft, Archive, FileText, Download, ShoppingBag, Heart, Ban, Menu, X, Settings, Share2, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNsfw } from '../context/NsfwContext';
 import client from '../api/client';
 import ProfileHeader from '../components/ProfileHeader/ProfileHeader';
 import { getFullMediaUrl } from '../utils/mediaUrl';
@@ -10,6 +11,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { username } = useParams();
   const { user: currentUser, logout, isAuthenticated } = useAuth();
+  const { nsfwRevealed, revealNsfw } = useNsfw();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -292,19 +294,37 @@ export default function Profile() {
                   </div>
                 ) : (
                   <div className="profile-grid">
-                    {posts.map((post) => (
+                    {posts.map((post) => {
+                      const postIsNsfw = Boolean(post.isNSFW) && !isOwnProfile && !nsfwRevealed;
+                      return (
                       <div 
                         key={post._id} 
                         className="rednote-post-card"
-                        onClick={() => navigate(`/post/${post._id}`, { state: { posts, scrollToId: post._id } })}
+                        onClick={() => {
+                          if (postIsNsfw) return;
+                          navigate(`/post/${post._id}`, { state: { posts, scrollToId: post._id } });
+                        }}
                       >
                         <div className="card-media-wrapper">
                           {post.type === 'video' ? (
-                            <video src={getFullMediaUrl(post.mediaUrl)} className="grid-media" muted playsInline />
+                            <video src={getFullMediaUrl(post.mediaUrl)} className="grid-media" muted playsInline style={postIsNsfw ? { filter: 'blur(20px) scale(1.1)' } : {}} />
                           ) : (
-                            <img src={getFullMediaUrl(post.mediaUrl)} alt="Post grid preview" className="grid-media" />
+                            <img src={getFullMediaUrl(post.mediaUrl)} alt="Post grid preview" className="grid-media" style={postIsNsfw ? { filter: 'blur(20px) scale(1.1)' } : {}} />
                           )}
                           {post.type === 'video' && <div className="grid-media-indicator">🎥</div>}
+                          {postIsNsfw && isAuthenticated && (
+                            <div className="profile-nsfw-overlay" onClick={(e) => { e.stopPropagation(); revealNsfw(); }}>
+                              <AlertCircle size={22} color="#ef4444" />
+                              <span className="profile-nsfw-label">🔞 18+</span>
+                              <span className="profile-nsfw-tap">Tap to view</span>
+                            </div>
+                          )}
+                          {postIsNsfw && !isAuthenticated && (
+                            <div className="profile-nsfw-overlay">
+                              <AlertCircle size={22} color="#ef4444" />
+                              <span className="profile-nsfw-label">🔞 18+</span>
+                            </div>
+                          )}
                         </div>
                         <div className="card-info-wrapper">
                           <p className="card-caption">{post.caption || 'Untitled Post'}</p>
@@ -324,7 +344,8 @@ export default function Profile() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               )}
@@ -337,23 +358,41 @@ export default function Profile() {
                   </div>
                 ) : (
                   <div className="profile-grid">
-                    {reels.map((reel) => (
+                    {reels.map((reel) => {
+                      const reelIsNsfw = Boolean(reel.isNSFW) && !isOwnProfile && !nsfwRevealed;
+                      return (
                       <div 
                         key={reel._id} 
                         className="rednote-post-card"
-                        onClick={() => navigate('/snips', { state: { activeId: reel._id, reelsList: reels } })}
+                        onClick={() => {
+                          if (reelIsNsfw) return;
+                          navigate('/snips', { state: { activeId: reel._id, reelsList: reels } });
+                        }}
                       >
                         <div className="card-media-wrapper">
                           {reel.thumbnailUrl ? (
                             reel.thumbnailUrl.endsWith('.mp4') || reel.thumbnailUrl.endsWith('.mov') ? (
-                              <video src={getFullMediaUrl(reel.thumbnailUrl)} className="grid-media" muted playsInline />
+                              <video src={getFullMediaUrl(reel.thumbnailUrl)} className="grid-media" muted playsInline style={reelIsNsfw ? { filter: 'blur(20px) scale(1.1)' } : {}} />
                             ) : (
-                              <img src={getFullMediaUrl(reel.thumbnailUrl)} alt="Reel grid preview" className="grid-media" />
+                              <img src={getFullMediaUrl(reel.thumbnailUrl)} alt="Reel grid preview" className="grid-media" style={reelIsNsfw ? { filter: 'blur(20px) scale(1.1)' } : {}} />
                             )
                           ) : (
                             <div className="grid-media-fallback">🎬</div>
                           )}
                           <div className="grid-media-indicator">▶</div>
+                          {reelIsNsfw && isAuthenticated && (
+                            <div className="profile-nsfw-overlay" onClick={(e) => { e.stopPropagation(); revealNsfw(); }}>
+                              <AlertCircle size={22} color="#ef4444" />
+                              <span className="profile-nsfw-label">🔞 18+</span>
+                              <span className="profile-nsfw-tap">Tap to view</span>
+                            </div>
+                          )}
+                          {reelIsNsfw && !isAuthenticated && (
+                            <div className="profile-nsfw-overlay">
+                              <AlertCircle size={22} color="#ef4444" />
+                              <span className="profile-nsfw-label">🔞 18+</span>
+                            </div>
+                          )}
                         </div>
                         <div className="card-info-wrapper">
                           <p className="card-caption">{reel.caption || 'Untitled Snip'}</p>
@@ -373,7 +412,8 @@ export default function Profile() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               )}
@@ -434,11 +474,14 @@ export default function Profile() {
                     </div>
 
                     <div className="profile-grid">
-                      {(customAlbumsMap[selectedAlbum] || []).map((item) => (
+                      {(customAlbumsMap[selectedAlbum] || []).map((item) => {
+                        const albumItemIsNsfw = Boolean(item.isNSFW) && !isOwnProfile && !nsfwRevealed;
+                        return (
                         <div 
                           key={item._id} 
                           className="rednote-post-card"
                           onClick={() => {
+                            if (albumItemIsNsfw) return;
                             if (item.type === 'reel') {
                               navigate('/snips', { 
                                 state: { 
@@ -453,12 +496,25 @@ export default function Profile() {
                         >
                           <div className="card-media-wrapper">
                             {item.type === 'video' || item.type === 'reel' ? (
-                              <video src={getFullMediaUrl(item.mediaUrl || item.thumbnailUrl)} className="grid-media" muted playsInline />
+                              <video src={getFullMediaUrl(item.mediaUrl || item.thumbnailUrl)} className="grid-media" muted playsInline style={albumItemIsNsfw ? { filter: 'blur(20px) scale(1.1)' } : {}} />
                             ) : (
-                              <img src={getFullMediaUrl(item.mediaUrl)} alt="Album preview" className="grid-media" />
+                              <img src={getFullMediaUrl(item.mediaUrl)} alt="Album preview" className="grid-media" style={albumItemIsNsfw ? { filter: 'blur(20px) scale(1.1)' } : {}} />
                             )}
                             {(item.type === 'video' || item.type === 'reel') && (
                               <div className="grid-media-indicator">🎥</div>
+                            )}
+                            {albumItemIsNsfw && isAuthenticated && (
+                              <div className="profile-nsfw-overlay" onClick={(e) => { e.stopPropagation(); revealNsfw(); }}>
+                                <AlertCircle size={22} color="#ef4444" />
+                                <span className="profile-nsfw-label">🔞 18+</span>
+                                <span className="profile-nsfw-tap">Tap to view</span>
+                              </div>
+                            )}
+                            {albumItemIsNsfw && !isAuthenticated && (
+                              <div className="profile-nsfw-overlay">
+                                <AlertCircle size={22} color="#ef4444" />
+                                <span className="profile-nsfw-label">🔞 18+</span>
+                              </div>
                             )}
                           </div>
                           <div className="card-info-wrapper">
@@ -479,7 +535,8 @@ export default function Profile() {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )
@@ -1071,6 +1128,34 @@ export default function Profile() {
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+
+        /* NSFW overlay on profile grid cards */
+        .profile-nsfw-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          cursor: pointer;
+          gap: 4px;
+        }
+
+        .profile-nsfw-label {
+          color: #fff;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .profile-nsfw-tap {
+          color: #ccc;
+          font-size: 10px;
+          margin-top: 2px;
         }
 
         /* Hamburger button */

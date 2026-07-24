@@ -493,7 +493,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   const isOwnContent = isAuthenticated && user?._id && post.author?._id === user._id;
-  const isBlurred = Boolean(post.isNSFW) && !isOwnContent && (isAuthenticated ? !user?.showNSFW : !nsfwRevealed);
+  const isBlurred = Boolean(post.isNSFW) && !isOwnContent && !nsfwRevealed;
 
   const toggleVideoPlay = (e) => {
     if (isBlurred) return;
