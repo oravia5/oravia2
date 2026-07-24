@@ -24,6 +24,7 @@ export async function initPushNotifications() {
     // Register Service Worker
     const registration = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
+    await registration.update();
 
     // Check Notification Permission
     let permission = Notification.permission;
