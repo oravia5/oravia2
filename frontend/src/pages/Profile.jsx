@@ -295,7 +295,8 @@ export default function Profile() {
                 ) : (
                   <div className="profile-grid">
                     {posts.map((post) => {
-                      const postIsNsfw = Boolean(post.isNSFW) && !isOwnProfile && !nsfwRevealed;
+                      const isNsfwFlag = post.isNSFW === true || post.isNSFW === 'true';
+                      const postIsNsfw = isNsfwFlag && !isOwnProfile && !nsfwRevealed;
                       return (
                       <div 
                         key={post._id} 
@@ -359,7 +360,8 @@ export default function Profile() {
                 ) : (
                   <div className="profile-grid">
                     {reels.map((reel) => {
-                      const reelIsNsfw = Boolean(reel.isNSFW) && !isOwnProfile && !nsfwRevealed;
+                      const isNsfwFlag = reel.isNSFW === true || reel.isNSFW === 'true';
+                      const reelIsNsfw = isNsfwFlag && !isOwnProfile && !nsfwRevealed;
                       return (
                       <div 
                         key={reel._id} 
@@ -475,7 +477,8 @@ export default function Profile() {
 
                     <div className="profile-grid">
                       {(customAlbumsMap[selectedAlbum] || []).map((item) => {
-                        const albumItemIsNsfw = Boolean(item.isNSFW) && !isOwnProfile && !nsfwRevealed;
+                        const isNsfwFlag = item.isNSFW === true || item.isNSFW === 'true';
+                        const albumItemIsNsfw = isNsfwFlag && !isOwnProfile && !nsfwRevealed;
                         return (
                         <div 
                           key={item._id} 

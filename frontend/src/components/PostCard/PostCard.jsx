@@ -493,7 +493,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   const isOwnContent = isAuthenticated && user?._id && post.author?._id === user._id;
-  const isBlurred = Boolean(post.isNSFW) && !isOwnContent && !nsfwRevealed;
+  const isNsfwFlag = post.isNSFW === true || post.isNSFW === 'true';
+  const isBlurred = isNsfwFlag && !isOwnContent && !nsfwRevealed;
 
   const toggleVideoPlay = (e) => {
     if (isBlurred) return;
@@ -607,7 +608,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
               <span className="post-time-inline" style={{ color: 'var(--text-muted, #a1a1aa)', fontSize: '12px', fontWeight: '500' }}>
                 {formatTime(post.createdAt)}
               </span>
-              {post.isNSFW && (
+              {isNsfwFlag && (
                 <span style={{ 
                   background: 'rgba(239, 68, 68, 0.15)', 
                   color: '#ef4444', 

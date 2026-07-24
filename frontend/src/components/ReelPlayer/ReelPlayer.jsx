@@ -29,7 +29,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const { nsfwRevealed, revealNsfw } = useNsfw();
 
   const isOwnContent = isAuthenticated && user?._id && reel.author?._id === user._id;
-  const isBlurred = Boolean(reel.isNSFW) && !isOwnContent && !nsfwRevealed;
+  const isNsfwFlag = reel.isNSFW === true || reel.isNSFW === 'true';
+  const isBlurred = isNsfwFlag && !isOwnContent && !nsfwRevealed;
   
   const parseCaptionText = (text) => {
     if (!text) return '';
