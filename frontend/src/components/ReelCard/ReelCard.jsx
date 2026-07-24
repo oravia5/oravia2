@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { getFullMediaUrl } from '../../utils/mediaUrl';
+import { getFullMediaUrl, triggerDirectFileDownload } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreVertical, AlertCircle, ShoppingBag, Download, Tag, Lock, UserPlus, X, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -167,7 +167,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
       if (res.data.success) {
         setProductDownloadCounts(prev => ({ ...prev, [prod._id]: res.data.downloadCount }));
         const fileUrl = res.data.fileUrl || prod.fileUrl;
-        if (fileUrl) window.open(getFullMediaUrl(fileUrl), '_blank', 'noopener,noreferrer');
+        if (fileUrl) triggerDirectFileDownload(fileUrl, prod.fileName || prod.title);
       }
     } catch (err) {
       console.error('Download error:', err);

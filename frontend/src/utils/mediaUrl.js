@@ -18,3 +18,38 @@ export const getFullMediaUrl = (url) => {
   const backendBase = import.meta.env.VITE_BACKEND_URL || '';
   return `${backendBase}${url}`;
 };
+
+/**
+ * Forces actual file download directly to device storage instead of opening in tab.
+ */
+export const triggerDirectFileDownload = async (url, preferredFileName) => {
+  if (!url) return;
+  const fullUrl = getFullMediaUrl(url);
+  const fileName = preferredFileName || url.split('/').pop() || 'download';
+
+  try {
+    const res = await fetch(fullUrl);
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    }, 100);
+  } catch (err) {
+    console.warn('Direct blob download failed, fallback to anchor download:', err);
+    const a = document.createElement('a');
+    a.href = fullUrl;
+    a.download = fileName;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 100);
+  }
+};
+

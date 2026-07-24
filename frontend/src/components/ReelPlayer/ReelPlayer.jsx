@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { getFullMediaUrl } from '../../utils/mediaUrl';
+import { getFullMediaUrl, triggerDirectFileDownload } from '../../utils/mediaUrl';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreVertical, Lock, Download, ShoppingBag } from 'lucide-react';
 import { queueView } from '../../utils/viewTracker';
@@ -169,7 +169,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
       if (res.data.success) {
         setProductDownloadCounts(prev => ({ ...prev, [prod._id]: res.data.downloadCount }));
         const fileUrl = res.data.fileUrl || prod.fileUrl;
-        if (fileUrl) window.open(getFullMediaUrl(fileUrl), '_blank', 'noopener,noreferrer');
+        if (fileUrl) triggerDirectFileDownload(fileUrl, prod.fileName || prod.title);
       }
     } catch (err) {
       console.error('Download error:', err);

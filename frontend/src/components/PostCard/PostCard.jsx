@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { queueView } from '../../utils/viewTracker';
-import { getFullMediaUrl } from '../../utils/mediaUrl';
+import { getFullMediaUrl, triggerDirectFileDownload } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle, Tag, Lock, UserPlus, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -106,7 +106,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
         }));
         const fileUrl = res.data.fileUrl || prod.fileUrl;
         if (fileUrl) {
-          window.open(getFullMediaUrl(fileUrl), '_blank', 'noopener,noreferrer');
+          triggerDirectFileDownload(fileUrl, prod.fileName || prod.title);
         }
       }
     } catch (err) {
