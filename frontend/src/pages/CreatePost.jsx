@@ -751,6 +751,12 @@ export default function CreatePost() {
               setSelectedFiles([]);
               setPreviewUrls([]);
               setError('');
+              setTimeout(() => {
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                  fileInputRef.current.click();
+                }
+              }, 50);
             }}
             disabled={uploading}
           >
@@ -808,7 +814,11 @@ export default function CreatePost() {
             type="file" 
             ref={fileInputRef} 
             onChange={handleFileChange} 
-            accept={isReel ? "video/*" : (captureSource === 'camera' ? "image/*,video/*" : "image/*,video/*")} 
+            accept={
+              captureSource === 'camera' 
+                ? (isReel ? "video/*" : "image/*") 
+                : (isReel ? "video/*" : "image/*,video/*")
+            } 
             capture={captureSource === 'camera' ? "environment" : undefined}
             multiple={captureSource === 'camera' ? false : !isReel}
             style={{ display: 'none' }}
