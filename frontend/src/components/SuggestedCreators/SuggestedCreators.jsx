@@ -12,15 +12,28 @@ export default function SuggestedCreators({ onFollowChange }) {
   const [loading, setLoading] = useState(true);
   const [followingMap, setFollowingMap] = useState({});
 
+  // Pick N random items from array without repeats
+  const pickRandom = (arr, n) => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy.slice(0, n);
+  };
+
   useEffect(() => {
     const fetchSuggested = async () => {
       try {
         const res = await client.get(`/users/suggested?t=${Date.now()}`);
         if (res.data.success) {
-          setCreators(res.data.data || []);
+          const pool = res.data.data || [];
+          // Randomly pick 4 from full pool — different every refresh
+          const picked = pickRandom(pool, 4);
+          setCreators(picked);
           // Pre-populate following state
           const initialMap = {};
-          (res.data.data || []).forEach(c => {
+          picked.forEach(c => {
             if (user && (user.following || []).some(id => id.toString() === c._id.toString())) {
               initialMap[c._id] = true;
             }

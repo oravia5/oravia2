@@ -750,13 +750,13 @@ export const getSuggestedUsers = async (req, res) => {
       users = [...users, ...additionalUsers];
     }
 
-    // Fisher-Yates Random Shuffle for Freshness
+    // Fisher-Yates Random Shuffle — full pool shuffle, return ALL so frontend can pick random subset
     for (let i = users.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [users[i], users[j]] = [users[j], users[i]];
     }
 
-    const selected = users.slice(0, 8).map(u => {
+    const mapped = users.map(u => {
       const mutuals = (u.followers || []).filter(fId => myFollowing.includes(fId.toString()));
       let reasonText = 'Active Creator';
       if (mutuals.length > 0) {
@@ -764,7 +764,6 @@ export const getSuggestedUsers = async (req, res) => {
       } else if (u.followers?.length > 0) {
         reasonText = `${u.followers.length} follower${u.followers.length > 1 ? 's' : ''}`;
       }
-
       return {
         _id: u._id,
         username: u.username,
@@ -778,7 +777,7 @@ export const getSuggestedUsers = async (req, res) => {
 
     res.json({
       success: true,
-      data: selected
+      data: mapped   // Return full shuffled pool, frontend picks random 4
     });
   } catch (error) {
     console.error('Get suggested users error:', error);
