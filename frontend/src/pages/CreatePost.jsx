@@ -155,6 +155,8 @@ export default function CreatePost() {
           price: p.price ? (p.price === 'FREE' ? '0' : p.price.replace(/[^0-9.]/g, '')) : '',
           originalPrice: p.originalPrice ? p.originalPrice.replace(/[^0-9.]/g, '') : '',
           isFree: p.price === 'FREE' || p.price === '0',
+          previewUrl: p.imageUrl ? getFullMediaUrl(p.imageUrl) : (p.previewUrl || ''),
+          digitalFileName: p.fileName || (p.fileUrl ? p.fileUrl.split('/').pop() : ''),
           saved: true
         }))
       : []
@@ -1076,8 +1078,8 @@ export default function CreatePost() {
                         <div className="product-card-fields">
                           {/* Left: Product Image File Picker */}
                           <div className="product-img-selector" onClick={() => document.getElementById(`prod-img-${idx}`).click()}>
-                            {item.previewUrl ? (
-                              <img src={item.previewUrl} alt="Product preview" className="prod-picker-preview" />
+                            {(item.previewUrl || item.imageUrl) ? (
+                              <img src={item.previewUrl || getFullMediaUrl(item.imageUrl)} alt="Product preview" className="prod-picker-preview" />
                             ) : (
                               <div className="prod-picker-placeholder">
                                 <Plus size={16} />
