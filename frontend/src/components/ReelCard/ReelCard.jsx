@@ -67,9 +67,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   const [commentCount, setCommentCount] = useState(reel.commentCount || 0);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-
-
+  const [isMuted, setIsMuted] = useState(() => sessionStorage.getItem('oravia_sound_enabled') !== 'true');
 
   const isLiked = likes.some(id => id.toString() === user?._id?.toString());
   const isDisliked = dislikes.some(id => id.toString() === user?._id?.toString());
@@ -88,20 +86,37 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
           const video = node.querySelector('video');
           if (!video) return;
           if (entry.isIntersecting) {
+            const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+            video.muted = !soundEnabled;
+            setIsMuted(!soundEnabled);
             video.play().catch((err) => {
               console.log('Autoplay blocked:', err);
             });
             setIsPlaying(true);
           } else {
             video.pause();
+            video.muted = true;
             setIsPlaying(false);
+            setIsMuted(true);
           }
         });
       },
-      { threshold: 0.6 }
+      { threshold: 0.4 }
     );
     observer.observe(node);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const syncSound = () => {
+      const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+      setIsMuted(!soundEnabled);
+      if (videoRef.current) {
+        videoRef.current.muted = !soundEnabled;
+      }
+    };
+    window.addEventListener('oravia_sound_change', syncSound);
+    return () => window.removeEventListener('oravia_sound_change', syncSound);
   }, []);
 
   const handleArchiveToggle = async (e) => {
@@ -472,7 +487,17 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
             {!isBlurred && (
               <button
                 className="mute-btn"
-                onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const soundEnabled = sessionStorage.getItem('oravia_sound_enabled') === 'true';
+                  const nextSoundEnabled = !soundEnabled;
+                  sessionStorage.setItem('oravia_sound_enabled', nextSoundEnabled ? 'true' : 'false');
+                  setIsMuted(!nextSoundEnabled);
+                  if (videoRef.current) {
+                    videoRef.current.muted = !nextSoundEnabled;
+                  }
+                  window.dispatchEvent(new Event('oravia_sound_change'));
+                }}
                 aria-label={isMuted ? 'Unmute' : 'Mute'}
               >
                 <Volume2 size={16} color={isMuted ? '#ef4444' : '#22c55e'} />
