@@ -847,6 +847,10 @@ export default function CreatePost() {
               </div>
               <h5>{isReel ? (captureSource === 'camera' ? 'Record a Snip' : 'Add a Video') : (captureSource === 'camera' ? 'Take a Photo' : 'Add Photos or Videos')}</h5>
               <p>{isReel ? (captureSource === 'camera' ? 'Tap to open camera and record live video' : 'Select a video file for your Snip') : (captureSource === 'camera' ? 'Tap to open camera and snap a photo' : 'Select up to 10 files (supports mixed images & videos)')}</p>
+              <div style={{ marginTop: '8px', fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '12px' }}>⚡ Max size: 100MB</span>
+                <span style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '12px' }}>⏱️ Max length: 3 mins</span>
+              </div>
             </div>
           )}
           <input 
