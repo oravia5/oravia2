@@ -18,48 +18,33 @@ export const noTapHighlight = {
 };
 
 export function OdometerNumber({ value, color }) {
-  const [display, setDisplay] = useState(value);
-  const [prev, setPrev] = useState(value);
   const [animKey, setAnimKey] = useState(0);
-  const dir = useRef(1);
+  const prevValueRef = useRef(value);
 
-  if (value !== display) {
-    dir.current = value > display ? 1 : -1;
-    setPrev(display);
-    setDisplay(value);
-    setAnimKey((k) => k + 1);
-  }
+  React.useEffect(() => {
+    if (prevValueRef.current !== value) {
+      prevValueRef.current = value;
+      setAnimKey((k) => k + 1);
+    }
+  }, [value]);
 
   return (
     <span
-      className="odometer-number-container"
+      key={animKey}
       style={{
-        position: 'relative',
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        height: "1.2em",
-        minWidth: "1ch",
-        overflow: "hidden",
-        color,
-        fontVariantNumeric: "tabular-nums",
+        color: color || 'inherit',
+        fontSize: '14px',
         fontWeight: 600,
-        fontSize: "14px"
+        lineHeight: 1,
+        userSelect: 'none',
+        whiteSpace: 'nowrap',
+        animation: animKey > 0 ? 'numberPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'none'
       }}
     >
-      <span
-        key={animKey}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          position: "relative",
-          animation: animKey > 0 ? "odometerRoll 0.42s cubic-bezier(.22,1,.36,1) forwards" : "none",
-          "--dir": dir.current,
-        }}
-      >
-        <span style={{ order: dir.current === 1 ? 0 : 2 }}>{prev}</span>
-        <span style={{ order: 1 }}>{display}</span>
-      </span>
+      {value}
     </span>
   );
 }
