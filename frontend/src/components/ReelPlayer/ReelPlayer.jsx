@@ -9,6 +9,7 @@ import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import LikesSheet from '../LikesSheet/LikesSheet';
+import ShareModal from '../ShareModal/ShareModal';
 import { useNsfw } from '../../context/NsfwContext';
 import { OdometerNumber, FloatingHeartsOverlay, useEnergyLikeEffects, PARTICLE_COUNT, SHARD_COUNT } from '../LikeEffects/EnergyLikeEffects';
 
@@ -63,6 +64,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [dislikes, setDislikes] = useState(reel.dislikes || []);
   const [isSaved, setIsSaved] = useState(user?.savedPosts?.includes(reel._id) || false);
   const [shareCount, setShareCount] = useState(reel.shareCount || 0);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(() => {
@@ -334,28 +336,9 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
     }
   };
 
-  const handleShare = async (e) => {
-    e.stopPropagation();
-    try {
-      const res = await client.post(`/posts/${reel._id}/share`);
-      if (res.data.success) {
-        setShareCount(res.data.data.shareCount);
-        const shareLink = res.data.data.shareableUrl;
-
-        if (navigator.share) {
-          await navigator.share({
-            title: 'Oravia Snip',
-            text: reel.caption || 'Check out this snip on Oravia!',
-            url: shareLink,
-          });
-        } else {
-          await navigator.clipboard.writeText(shareLink);
-          alert('Snip link copied to clipboard!');
-        }
-      }
-    } catch (err) {
-      console.error('Error sharing reel:', err);
-    }
+  const handleShare = (e) => {
+    if (e) e.stopPropagation();
+    setShowShareModal(true);
   };
 
   return (
@@ -1102,6 +1085,21 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         </div>,
         document.body
       )}
+
+      <ShareModal 
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        item={reel}
+        type="reel"
+        onShareSuccess={async () => {
+          try {
+            const res = await client.post(`/posts/${reel._id}/share`);
+            if (res.data.success) {
+              setShareCount(res.data.data.shareCount);
+            }
+          } catch (e) {}
+        }}
+      />
 
       <AuthDrawer 
         isOpen={isAuthDrawerOpen} 

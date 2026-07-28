@@ -9,6 +9,7 @@ import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import LikesSheet from '../LikesSheet/LikesSheet';
+import ShareModal from '../ShareModal/ShareModal';
 import { useNsfw } from '../../context/NsfwContext';
 import { OdometerNumber, FloatingHeartsOverlay, useEnergyLikeEffects, PARTICLE_COUNT, SHARD_COUNT } from '../LikeEffects/EnergyLikeEffects';
 
@@ -247,6 +248,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
     (user?.savedPosts || []).some(id => id.toString() === post._id.toString())
   );
   const [shareCount, setShareCount] = useState(post.shareCount || 0);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   const [showComments, setShowComments] = useState(false);
   const [showLikesSheet, setShowLikesSheet] = useState(false);
@@ -508,29 +510,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
     }
   };
 
-  const handleShare = async () => {
-    try {
-      const res = await client.post(`/posts/${post._id}/share`);
-      if (res.data.success) {
-        setShareCount(res.data.data.shareCount);
-        const shareLink = res.data.data.shareableUrl;
-
-        // Try native Web Share API
-        if (navigator.share) {
-          await navigator.share({
-            title: 'Oravia Post',
-            text: post.caption || 'Check out this post on Oravia!',
-            url: shareLink,
-          });
-        } else {
-          // Fallback to Clipboard Copy
-          await navigator.clipboard.writeText(shareLink);
-          alert('Link copied to clipboard!');
-        }
-      }
-    } catch (err) {
-      console.error('Error sharing post:', err);
-    }
+  const handleShare = () => {
+    setShowShareModal(true);
   };
 
   const handleDelete = async () => {
@@ -1916,6 +1897,21 @@ export default function PostCard({ post, onDeleteSuccess }) {
         </div>,
         document.body
       )}
+
+      <ShareModal 
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        item={post}
+        type={post.type === 'reel' || post.type === 'snip' ? 'reel' : 'post'}
+        onShareSuccess={async () => {
+          try {
+            const res = await client.post(`/posts/${post._id}/share`);
+            if (res.data.success) {
+              setShareCount(res.data.data.shareCount);
+            }
+          } catch (e) {}
+        }}
+      />
 
       <AuthDrawer 
         isOpen={isAuthDrawerOpen} 

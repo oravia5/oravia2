@@ -1,0 +1,426 @@
+/* Glassmorphic Share Modal Styles */
+
+.share-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .share-modal-overlay {
+    align-items: center;
+    padding: 20px;
+  }
+}
+
+.share-modal-card {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  background: linear-gradient(165deg, #1f1f23 0%, #121215 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(139, 92, 246, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #f4f4f5;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .share-modal-card {
+    border-radius: 28px;
+  }
+}
+
+/* Modal Header */
+.share-modal-header {
+  padding: 18px 20px 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.share-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.3px;
+}
+
+.share-modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #a1a1aa;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Modal Body */
+.share-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Item Preview Card */
+.share-item-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+.share-item-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #27272a;
+}
+
+.share-item-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.share-item-author {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e4e4e7;
+  margin: 0 0 2px 0;
+}
+
+.share-item-text {
+  font-size: 12px;
+  color: #a1a1aa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+/* Social Apps Grid */
+.share-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #71717a;
+  margin-bottom: 10px;
+}
+
+.share-social-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.share-social-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #d4d4d8;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.share-social-btn:hover {
+  transform: translateY(-4px);
+}
+
+.share-social-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  transition: filter 0.2s ease;
+}
+
+.share-social-btn:hover .share-social-icon {
+  filter: brightness(1.15);
+}
+
+.share-social-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #a1a1aa;
+}
+
+/* Specific Social Brand Colors */
+.icon-whatsapp { background: linear-gradient(135deg, #25D366, #128C7E); }
+.icon-telegram { background: linear-gradient(135deg, #0088cc, #229ED9); }
+.icon-twitter { background: linear-gradient(135deg, #1DA1F2, #0d8bd9); }
+.icon-facebook { background: linear-gradient(135deg, #1877F2, #0d5bb5); }
+.icon-native { background: linear-gradient(135deg, #ec4899, #8b5cf6); }
+
+/* In-App Direct Message Section */
+.share-inapp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.share-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.share-search-box input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 9px 12px 9px 36px;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.share-search-box input:focus {
+  border-color: #8b5cf6;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.share-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #71717a;
+  pointer-events: none;
+}
+
+.share-chats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.share-chat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  transition: background 0.2s ease;
+}
+
+.share-chat-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.share-chat-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.share-chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #27272a;
+}
+
+.share-chat-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0;
+}
+
+.share-chat-username {
+  font-size: 11px;
+  color: #71717a;
+  margin: 0;
+}
+
+.share-send-btn {
+  background: #8b5cf6;
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.share-send-btn:hover {
+  background: #7c3aed;
+  transform: scale(1.03);
+}
+
+.share-send-btn.sent {
+  background: #10b981;
+  cursor: default;
+}
+
+/* Copy Link & Quick Actions Footer */
+.share-modal-footer {
+  padding: 14px 20px 18px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-copy-box {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 4px 4px 4px 14px;
+}
+
+.share-copy-url {
+  flex: 1;
+  font-size: 12px;
+  color: #a1a1aa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: all;
+}
+
+.share-copy-btn {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.share-copy-btn:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+
+.share-copy-btn.copied {
+  background: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Download / Action Row */
+.share-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.share-secondary-action {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 10px;
+  color: #e4e4e7;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-secondary-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Animated Floating Toast */
+.share-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  background: rgba(16, 185, 129, 0.95);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: toastPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Keyframes */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(40px) scale(0.96); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes toastPop {
+  0% { transform: translate(-50%, 20px) scale(0.8); opacity: 0; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
