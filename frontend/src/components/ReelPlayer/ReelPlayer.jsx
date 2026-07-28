@@ -1085,6 +1085,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
         document.body
       )}
 
+      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
+
       <ShareModal 
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}

@@ -383,7 +383,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   };
 
   return (
-    <div className="reel-card animate-fade relative overflow-hidden" style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none', position: 'relative' }}>
+    <div className="reel-card animate-fade relative overflow-hidden" style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none', position: 'relative', overflow: 'hidden' }}>
       {/* Header */}
       <div className="reel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
         <Link to={`/profile/${reel.author?.username}`} className="author-link" onClick={(e) => e.stopPropagation()}>
@@ -742,6 +742,8 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
           onCommentCountChange={setCommentCount}
         />
       )}
+
+      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
 
       <style>{`
         .reel-card {

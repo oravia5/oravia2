@@ -565,7 +565,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
     <div 
       className="post-card animate-fade relative overflow-hidden" 
       ref={postCardRef}
-      style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none', position: 'relative' }}
+      style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none', position: 'relative', overflow: 'hidden' }}
     >
       {showAgeGate && (
         <div
@@ -1358,6 +1358,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
           onClose={() => setShowLikesSheet(false)}
         />
       )}
+
+      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
 
       <style>{`
         .location-link-wrapper {

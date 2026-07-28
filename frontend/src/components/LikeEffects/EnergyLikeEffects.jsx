@@ -226,59 +226,46 @@ export function useEnergyLikeEffects(cardRef, mediaRef) {
     }
   }, []);
 
+  const spawnBurstToCenter = useCallback((originRect, makeParticle, count) => {
+    const cardEl = cardRef?.current;
+    const mediaEl = mediaRef?.current || cardEl;
+    if (!cardEl || !mediaEl || !originRect) return;
+
+    const cardRect = cardEl.getBoundingClientRect();
+    const mediaRect = mediaEl.getBoundingClientRect();
+
+    const originX = originRect.left + originRect.width / 2 - cardRect.left;
+    const originY = originRect.top + originRect.height / 2 - cardRect.top;
+    const centerY = mediaRect.top + mediaRect.height / 2 - cardRect.top;
+
+    const newParticles = Array.from({ length: count }).map((_, i) =>
+      makeParticle(i, originX, originY, centerY, cardRect.width, cardRect.height)
+    );
+
+    setFloatingHearts((prev) => [...prev, ...newParticles]);
+    clearTimeout(floatTimeout.current);
+    floatTimeout.current = setTimeout(() => setFloatingHearts([]), HEART_TOTAL_MS);
+  }, [cardRef, mediaRef]);
+
   const triggerLikeEffect = useCallback((targetElement) => {
     setBurstKey((k) => k + 1);
     setCharging(true);
     vibrate(35);
     clearTimeout(chargeTimeout.current);
     chargeTimeout.current = setTimeout(() => setCharging(false), 750);
-
-    const cardEl = cardRef?.current;
-    const mediaEl = mediaRef?.current || cardEl;
-    if (!cardEl || !targetElement) return;
-
-    const cardRect = cardEl.getBoundingClientRect();
-    const mediaRect = mediaEl ? mediaEl.getBoundingClientRect() : cardRect;
-    const originRect = targetElement.getBoundingClientRect();
-
-    const originX = originRect.left + originRect.width / 2 - cardRect.left;
-    const originY = originRect.top + originRect.height / 2 - cardRect.top;
-    const centerY = mediaRect.top + mediaRect.height / 2 - cardRect.top;
-
-    const newParticles = Array.from({ length: FLOAT_HEART_COUNT }).map((_, i) =>
-      makeButtonHeart(i, originX, originY, centerY, cardRect.width, cardRect.height)
-    );
-
-    setFloatingHearts((prev) => [...prev, ...newParticles]);
-    clearTimeout(floatTimeout.current);
-    floatTimeout.current = setTimeout(() => setFloatingHearts([]), HEART_TOTAL_MS);
-  }, [cardRef, mediaRef, vibrate]);
+    if (targetElement) {
+      spawnBurstToCenter(targetElement.getBoundingClientRect(), makeButtonHeart, FLOAT_HEART_COUNT);
+    }
+  }, [spawnBurstToCenter, vibrate]);
 
   const triggerDislikeEffect = useCallback((targetElement) => {
     setCracking(true);
     setTimeout(() => setCracking(false), 500);
     vibrate([30, 40, 30]);
-
-    const cardEl = cardRef?.current;
-    const mediaEl = mediaRef?.current || cardEl;
-    if (!cardEl || !targetElement) return;
-
-    const cardRect = cardEl.getBoundingClientRect();
-    const mediaRect = mediaEl ? mediaEl.getBoundingClientRect() : cardRect;
-    const originRect = targetElement.getBoundingClientRect();
-
-    const originX = originRect.left + originRect.width / 2 - cardRect.left;
-    const originY = originRect.top + originRect.height / 2 - cardRect.top;
-    const centerY = mediaRect.top + mediaRect.height / 2 - cardRect.top;
-
-    const newParticles = Array.from({ length: DISLIKE_BURST_COUNT }).map((_, i) =>
-      makeButtonDislikeThumb(i, originX, originY, centerY, cardRect.width, cardRect.height)
-    );
-
-    setFloatingHearts((prev) => [...prev, ...newParticles]);
-    clearTimeout(floatTimeout.current);
-    floatTimeout.current = setTimeout(() => setFloatingHearts([]), HEART_TOTAL_MS);
-  }, [cardRef, mediaRef, vibrate]);
+    if (targetElement) {
+      spawnBurstToCenter(targetElement.getBoundingClientRect(), makeButtonDislikeThumb, DISLIKE_BURST_COUNT);
+    }
+  }, [spawnBurstToCenter, vibrate]);
 
   const triggerDoubleTap = useCallback((e) => {
     const now = Date.now();
