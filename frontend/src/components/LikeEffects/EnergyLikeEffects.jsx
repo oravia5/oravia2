@@ -110,7 +110,17 @@ export function FloatingHeartsOverlay({ floatingHearts }) {
   return (
     <div className="floating-hearts-overlay">
       {floatingHearts.map((h) =>
-        h.kind === "thumb" ? (
+        h.isDoubleTap ? (
+          <Heart
+            key={h.id}
+            size={h.size || 64}
+            className="double-tap-heart"
+            style={{
+              left: `${h.originX}px`,
+              top: `${h.originY}px`,
+            }}
+          />
+        ) : h.kind === "thumb" ? (
           <ThumbsDown
             key={h.id}
             size={h.size}
@@ -243,24 +253,32 @@ export function useEnergyLikeEffects(cardRef, mediaRef) {
     lastTapRef.current = now;
     if (!isDoubleTap) return false;
 
-    const cardEl = cardRef?.current;
-    const cardRect = cardEl ? cardEl.getBoundingClientRect() : null;
-    const containerWidth = cardRect ? cardRect.width : 300;
-    const containerHeight = cardRect ? cardRect.height : 300;
-    const originX = cardRect && e ? e.clientX - cardRect.left : containerWidth / 2;
-    const originY = cardRect && e ? e.clientY - cardRect.top : containerHeight / 2;
+    const mediaEl = mediaRef?.current || cardRef?.current;
+    const rect = mediaEl ? mediaEl.getBoundingClientRect() : null;
+    const containerWidth = rect ? rect.width : 300;
+    const containerHeight = rect ? rect.height : 300;
+    const originX = rect && e ? e.clientX - rect.left : containerWidth / 2;
+    const originY = rect && e ? e.clientY - rect.top : containerHeight / 2;
 
-    const newHearts = Array.from({ length: FLOAT_HEART_COUNT }).map((_, i) =>
+    const doubleTapHeart = {
+      id: `dt-${Date.now()}`,
+      isDoubleTap: true,
+      originX,
+      originY,
+      size: 72,
+    };
+
+    const miniHearts = Array.from({ length: 6 }).map((_, i) =>
       makeFloatingHeart(i, originX, originY, containerWidth, containerHeight)
     );
 
-    setFloatingHearts((prev) => [...prev, ...newHearts]);
+    setFloatingHearts([doubleTapHeart, ...miniHearts]);
     clearTimeout(floatTimeout.current);
-    floatTimeout.current = setTimeout(() => setFloatingHearts([]), HEART_TOTAL_MS);
+    floatTimeout.current = setTimeout(() => setFloatingHearts([]), 1200);
 
     vibrate(40);
     return true;
-  }, [cardRef, vibrate]);
+  }, [cardRef, mediaRef, vibrate]);
 
   return {
     charging,

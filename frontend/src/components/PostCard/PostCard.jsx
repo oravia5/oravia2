@@ -759,8 +759,9 @@ export default function PostCard({ post, onDeleteSuccess }) {
             handleLike(e);
           }
         }}
-        style={mediaContainerStyle}
+        style={{ ...mediaContainerStyle, position: 'relative', overflow: 'hidden' }}
       >
+        <FloatingHeartsOverlay floatingHearts={floatingHearts} />
         {isBlurred && (
           <div
             onClick={(e) => {

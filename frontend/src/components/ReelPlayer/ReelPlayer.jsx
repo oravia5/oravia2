@@ -345,8 +345,9 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
     <div 
       className="reel-player-container select-none relative overflow-hidden" 
       ref={containerRef}
-      style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none' }}
+      style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none', position: 'relative', overflow: 'hidden' }}
     >
+      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
       {/* Video element */}
       <video
         ref={videoRef}

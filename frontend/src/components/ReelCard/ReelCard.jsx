@@ -466,6 +466,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
 
       {/* Media Block */}
       <div ref={containerRef} className="reel-media-container" onClick={handleMediaClick} style={{ position: 'relative', overflow: 'hidden' }}>
+        <FloatingHeartsOverlay floatingHearts={floatingHearts} />
         {isBlurred && (
           <div
             onClick={(e) => {
