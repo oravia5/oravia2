@@ -2,12 +2,12 @@ import React, { useState, useRef, useCallback } from "react";
 import { Heart, ThumbsDown } from "lucide-react";
 import "./EnergyLikeEffects.css";
 
-export const PARTICLE_COUNT = 6;
-export const SHARD_COUNT = 4;
-export const FLOAT_HEART_COUNT = 12;
-export const DISLIKE_BURST_COUNT = 6;
+export const PARTICLE_COUNT = 8;
+export const SHARD_COUNT = 6;
+export const FLOAT_HEART_COUNT = 56;
+export const DISLIKE_BURST_COUNT = 40;
 export const DOUBLE_TAP_MS = 300;
-export const HEART_TOTAL_MS = 2200;
+export const HEART_TOTAL_MS = 4200;
 
 export const noTapHighlight = {
   WebkitTapHighlightColor: "transparent",
@@ -18,17 +18,60 @@ export const noTapHighlight = {
 };
 
 export function OdometerNumber({ value, color }) {
-  return <span style={{ color }}>{value}</span>;
+  const [display, setDisplay] = useState(value);
+  const [prev, setPrev] = useState(value);
+  const [animKey, setAnimKey] = useState(0);
+  const dir = useRef(1);
+
+  if (value !== display) {
+    dir.current = value > display ? 1 : -1;
+    setPrev(display);
+    setDisplay(value);
+    setAnimKey((k) => k + 1);
+  }
+
+  return (
+    <span
+      className="odometer-number-container"
+      style={{
+        position: 'relative',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: "1.2em",
+        minWidth: "1ch",
+        overflow: "hidden",
+        color,
+        fontVariantNumeric: "tabular-nums",
+        fontWeight: 600,
+        fontSize: "14px"
+      }}
+    >
+      <span
+        key={animKey}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          animation: animKey > 0 ? "odometerRoll 0.42s cubic-bezier(.22,1,.36,1) forwards" : "none",
+          "--dir": dir.current,
+        }}
+      >
+        <span style={{ order: dir.current === 1 ? 0 : 2 }}>{prev}</span>
+        <span style={{ order: 1 }}>{display}</span>
+      </span>
+    </span>
+  );
 }
 
 export function makeFloatingHeart(index, originX, originY, containerWidth, containerHeight) {
   const destX = 10 + Math.random() * Math.max(containerWidth - 20, 1);
   const dx = destX - originX;
-  const rise = 20 + Math.random() * 60;
-  const fall = Math.max(0, Math.min(containerHeight - originY - 20, 60));
-  const rot = (Math.random() * 2 - 1) * 40;
-  const size = 12 + Math.random() * 14;
-  const duration = 1200 + Math.random() * 800;
+  const rise = 30 + Math.random() * 90;
+  const fall = containerHeight - originY + 40 + Math.random() * 30;
+  const rot = (Math.random() * 2 - 1) * 70;
+  const size = 14 + Math.random() * 18;
+  const duration = 1600 + Math.random() * 1500;
   const delay = Math.random() * 700;
   const colors = ["#fb7185", "#f97316", "#ef4444", "#f43f5e"];
   return {
@@ -110,22 +153,12 @@ export function FloatingHeartsOverlay({ floatingHearts }) {
   return (
     <div className="floating-hearts-overlay">
       {floatingHearts.map((h) =>
-        h.isDoubleTap ? (
-          <Heart
-            key={h.id}
-            size={h.size || 64}
-            className="double-tap-heart"
-            style={{
-              left: `${h.originX}px`,
-              top: `${h.originY}px`,
-            }}
-          />
-        ) : h.kind === "thumb" ? (
+        h.kind === "thumb" ? (
           <ThumbsDown
             key={h.id}
             size={h.size}
             strokeWidth={0}
-            className="absolute pointer-events-none gravity-heart"
+            className="gravity-heart"
             style={{
               left: `${h.originX}px`,
               top: `${h.originY}px`,
@@ -145,7 +178,7 @@ export function FloatingHeartsOverlay({ floatingHearts }) {
             key={h.id}
             size={h.size}
             strokeWidth={0}
-            className="absolute pointer-events-none gravity-heart"
+            className="gravity-heart"
             style={{
               left: `${h.originX}px`,
               top: `${h.originY}px`,
@@ -253,32 +286,24 @@ export function useEnergyLikeEffects(cardRef, mediaRef) {
     lastTapRef.current = now;
     if (!isDoubleTap) return false;
 
-    const mediaEl = mediaRef?.current || cardRef?.current;
-    const rect = mediaEl ? mediaEl.getBoundingClientRect() : null;
-    const containerWidth = rect ? rect.width : 300;
-    const containerHeight = rect ? rect.height : 300;
-    const originX = rect && e ? e.clientX - rect.left : containerWidth / 2;
-    const originY = rect && e ? e.clientY - rect.top : containerHeight / 2;
+    const cardEl = cardRef?.current;
+    const cardRect = cardEl ? cardEl.getBoundingClientRect() : null;
+    const containerWidth = cardRect ? cardRect.width : 300;
+    const containerHeight = cardRect ? cardRect.height : 300;
+    const originX = cardRect && e ? e.clientX - cardRect.left : containerWidth / 2;
+    const originY = cardRect && e ? e.clientY - cardRect.top : containerHeight / 2;
 
-    const doubleTapHeart = {
-      id: `dt-${Date.now()}`,
-      isDoubleTap: true,
-      originX,
-      originY,
-      size: 72,
-    };
-
-    const miniHearts = Array.from({ length: 6 }).map((_, i) =>
+    const newHearts = Array.from({ length: FLOAT_HEART_COUNT }).map((_, i) =>
       makeFloatingHeart(i, originX, originY, containerWidth, containerHeight)
     );
 
-    setFloatingHearts([doubleTapHeart, ...miniHearts]);
+    setFloatingHearts((prev) => [...prev, ...newHearts]);
     clearTimeout(floatTimeout.current);
-    floatTimeout.current = setTimeout(() => setFloatingHearts([]), 1200);
+    floatTimeout.current = setTimeout(() => setFloatingHearts([]), HEART_TOTAL_MS);
 
     vibrate(40);
     return true;
-  }, [cardRef, mediaRef, vibrate]);
+  }, [cardRef, vibrate]);
 
   return {
     charging,
