@@ -259,9 +259,46 @@ export default function CreatePost() {
     fetchExistingAlbums();
   }, []);
 
-  const handleFileChange = (e) => {
+  const validateVideoDurationAndSize = (file) => {
+    return new Promise((resolve) => {
+      if (file.size > 100 * 1024 * 1024) {
+        resolve({ valid: false, message: `File "${file.name}" exceeds 100MB limit (${(file.size / (1024 * 1024)).toFixed(1)}MB). Max limit is 100MB.` });
+        return;
+      }
+      const isVid = (file.type && file.type.startsWith('video/')) || 
+        ['.mp4', '.mov', '.3gp', '.webm', '.mkv', '.avi'].some(ext => (file.name || '').toLowerCase().endsWith(ext));
+      if (!isVid) {
+        resolve({ valid: true });
+        return;
+      }
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        if (video.duration > 180) {
+          resolve({ valid: false, message: `Video is ${Math.round(video.duration)}s long. Maximum allowed video length is 3 minutes (180 seconds).` });
+        } else {
+          resolve({ valid: true });
+        }
+      };
+      video.onerror = () => resolve({ valid: true });
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
+      // Validate sizes and video durations
+      for (const file of files) {
+        const val = await validateVideoDurationAndSize(file);
+        if (!val.valid) {
+          setError(val.message);
+          if (e.target) e.target.value = '';
+          return;
+        }
+      }
+
       if (captureSource === 'camera') {
         const file = files[0];
         if (file) {

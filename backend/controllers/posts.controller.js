@@ -956,7 +956,7 @@ export const getPosts = async (req, res) => {
       }
     }
 
-    if (author) {
+    if (author && author !== 'undefined' && author !== 'null' && mongoose.Types.ObjectId.isValid(author)) {
       query.author = author;
     }
 
