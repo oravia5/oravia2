@@ -424,3 +424,15 @@
   0% { transform: translate(-50%, 20px) scale(0.8); opacity: 0; }
   100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
 }
+
+/* Share Icon Paper Plane Fly Micro-Animation */
+.share-icon-fly {
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s ease;
+}
+
+.share-action-btn:hover .share-icon-fly,
+.share-sidebar-btn:hover .share-icon-fly {
+  transform: translate(2px, -3px) rotate(-12deg) scale(1.1);
+  color: #8b5cf6;
+}
+

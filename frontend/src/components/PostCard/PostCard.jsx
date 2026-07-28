@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { queueView } from '../../utils/viewTracker';
 import { getFullMediaUrl, triggerDirectFileDownload } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle, Tag, Lock, UserPlus, X } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Send, Bookmark, Trash2, MapPin, Play, Volume2, ChevronLeft, ChevronRight, MoreHorizontal, Edit3, Download, ShoppingBag, Camera, Eye, AlertCircle, Tag, Lock, UserPlus, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -1322,8 +1322,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
         </div>
 
         <div className="actions-right">
-          <button className="action-btn" onClick={handleShare} aria-label="Share">
-            <Share2 size={22} />
+          <button className="action-btn share-action-btn" onClick={handleShare} aria-label="Share">
+            <Send size={20} className="share-icon-fly" />
             {shareCount > 0 && <span>{shareCount}</span>}
           </button>
           

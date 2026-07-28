@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getFullMediaUrl, triggerDirectFileDownload } from '../../utils/mediaUrl';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, VolumeX, Volume2, Eye, MoreVertical, Lock, Download, ShoppingBag } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Send, Bookmark, Play, VolumeX, Volume2, Eye, MoreVertical, Lock, Download, ShoppingBag } from 'lucide-react';
 import { queueView } from '../../utils/viewTracker';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
@@ -547,8 +547,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           <span>{commentCount}</span>
         </button>
 
-        <button className="sidebar-btn" onClick={handleShare} aria-label="Share">
-          <Share2 size={26} />
+        <button className="sidebar-btn share-sidebar-btn" onClick={handleShare} aria-label="Share">
+          <Send size={24} className="share-icon-fly" />
           <span>{shareCount}</span>
         </button>
 

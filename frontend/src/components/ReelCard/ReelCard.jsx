@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { getFullMediaUrl, triggerDirectFileDownload } from '../../utils/mediaUrl';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, ThumbsDown, MessageCircle, Share2, Bookmark, Play, Volume2, Film, Camera, MoreVertical, AlertCircle, ShoppingBag, Download, Tag, Lock, UserPlus, X, Eye } from 'lucide-react';
+import { Heart, ThumbsDown, MessageCircle, Share2, Send, Bookmark, Play, Volume2, Film, Camera, MoreVertical, AlertCircle, ShoppingBag, Download, Tag, Lock, UserPlus, X, Eye } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
@@ -705,8 +705,8 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
         </div>
 
         <div className="actions-right">
-          <button className="action-btn" onClick={handleShare} aria-label="Share">
-            <Share2 size={22} />
+          <button className="action-btn share-action-btn" onClick={handleShare} aria-label="Share">
+            <Send size={20} className="share-icon-fly" />
             {shareCount > 0 && <span>{shareCount}</span>}
           </button>
 
