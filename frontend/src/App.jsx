@@ -102,8 +102,8 @@ const AppLayout = () => {
 
   return (
     <>
-      {/* Desktop Blocker - visible only on screens > 480px (bypassed for admin dashboard and auth pages) */}
-      {!isAdminPath && !hideNavPaths.includes(location.pathname) && (
+      {/* Desktop Blocker - disabled for local dev/testing */}
+      {false && !isAdminPath && !hideNavPaths.includes(location.pathname) && (
         <div className="desktop-blocker">
           <div className="desktop-blocker-icon">📱</div>
           <h2>Oravia is Mobile Only</h2>

@@ -10,6 +10,7 @@ import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import LikesSheet from '../LikesSheet/LikesSheet';
 import { useNsfw } from '../../context/NsfwContext';
+import { OdometerNumber, FloatingHeartsOverlay, useEnergyLikeEffects, PARTICLE_COUNT, SHARD_COUNT } from '../LikeEffects/EnergyLikeEffects';
 
 const POPULAR_LOCATIONS = [
   'Mumbai, Maharashtra, India',
@@ -85,7 +86,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const navigate = useNavigate();
   const carouselRef = useRef(null);
   const postCardRef = useRef(null);
+  const mediaRef = useRef(null);
   const hasCountedView = useRef(false);
+
+  const { charging, cracking, burstKey, floatingHearts, pulse, triggerLikeEffect, triggerDislikeEffect, triggerDoubleTap } = useEnergyLikeEffects(postCardRef, mediaRef);
 
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with posts');
@@ -440,7 +444,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
     }
   };
 
-  const handleLike = async () => {
+  const handleLike = async (e) => {
+    if (e && e.currentTarget && typeof triggerLikeEffect === 'function') {
+      triggerLikeEffect(e.currentTarget);
+    }
     if (!isAuthenticated) {
       setDrawerAction('like posts');
       setIsAuthDrawerOpen(true);
@@ -457,7 +464,10 @@ export default function PostCard({ post, onDeleteSuccess }) {
     }
   };
 
-  const handleDislike = async () => {
+  const handleDislike = async (e) => {
+    if (e && e.currentTarget && typeof triggerDislikeEffect === 'function') {
+      triggerDislikeEffect(e.currentTarget);
+    }
     if (!isAuthenticated) {
       setDrawerAction('dislike posts');
       setIsAuthDrawerOpen(true);
@@ -571,7 +581,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
   };
 
   return (
-    <div className="post-card animate-fade" ref={postCardRef}>
+    <div 
+      className="post-card animate-fade relative overflow-hidden" 
+      ref={postCardRef}
+      style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none', position: 'relative' }}
+    >
       {showAgeGate && (
         <div
           style={{
@@ -755,7 +769,17 @@ export default function PostCard({ post, onDeleteSuccess }) {
       })()}
 
       {/* Media Block */}
-      <div className="post-media-container" style={mediaContainerStyle}>
+      <div 
+        className="post-media-container select-none" 
+        ref={mediaRef}
+        onClick={(e) => {
+          const isDoubleTap = triggerDoubleTap(e);
+          if (isDoubleTap && !isLiked) {
+            handleLike(e);
+          }
+        }}
+        style={mediaContainerStyle}
+      >
         {isBlurred && (
           <div
             onClick={(e) => {
@@ -1227,11 +1251,26 @@ export default function PostCard({ post, onDeleteSuccess }) {
       <div className="post-actions">
         <div className="actions-left">
           <button 
-            className={`action-btn ${isLiked ? 'liked' : ''}`} 
+            className={`action-btn ${isLiked ? 'liked' : ''} select-none`} 
             onClick={handleLike}
             aria-label="Like"
+            style={{ position: 'relative' }}
           >
-            <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
+            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              {charging && Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
+                <span
+                  key={`p-${burstKey}-${i}`}
+                  className="charge-particle"
+                  style={{
+                    "--angle": `${i * (360 / PARTICLE_COUNT)}deg`,
+                    "--delay": `${i * 18}ms`,
+                  }}
+                />
+              ))}
+              <span style={{ display: 'inline-flex', animation: charging ? "elasticCharge 0.75s cubic-bezier(.22,1,.36,1)" : "none" }}>
+                <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
+              </span>
+            </span>
             <span
               onClick={(e) => {
                 e.stopPropagation();
@@ -1239,16 +1278,32 @@ export default function PostCard({ post, onDeleteSuccess }) {
                 setShowLikesSheet(true);
               }}
             >
-              {likes.length}
+              <OdometerNumber value={likes.length} color="inherit" />
             </span>
           </button>
 
           <button 
-            className={`action-btn ${isDisliked ? 'disliked' : ''}`} 
+            className={`action-btn ${isDisliked ? 'disliked' : ''} select-none`} 
             onClick={handleDislike}
             aria-label="Dislike"
+            style={{ position: 'relative' }}
           >
-            <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
+            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              {cracking && Array.from({ length: SHARD_COUNT }).map((_, i) => (
+                <span
+                  key={`s-${i}`}
+                  className="crack-shard"
+                  style={{
+                    "--sx": `${(i - SHARD_COUNT / 2) * 7}px`,
+                    "--rot": `${(i - SHARD_COUNT / 2) * 25}deg`,
+                    "--delay": `${i * 15}ms`,
+                  }}
+                />
+              ))}
+              <span style={{ display: 'inline-flex', animation: cracking ? "dislikeDip 0.4s ease" : "none" }}>
+                <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
+              </span>
+            </span>
             <span
               onClick={(e) => {
                 e.stopPropagation();
@@ -1256,7 +1311,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
                 setShowLikesSheet(true);
               }}
             >
-              {dislikes.length}
+              <OdometerNumber value={dislikes.length} color="inherit" />
             </span>
           </button>
 
@@ -1321,6 +1376,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
           onClose={() => setShowLikesSheet(false)}
         />
       )}
+
+      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
 
       <style>{`
         .location-link-wrapper {

@@ -10,6 +10,7 @@ import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import LikesSheet from '../LikesSheet/LikesSheet';
 import { useNsfw } from '../../context/NsfwContext';
+import { OdometerNumber, FloatingHeartsOverlay, useEnergyLikeEffects, PARTICLE_COUNT, SHARD_COUNT } from '../LikeEffects/EnergyLikeEffects';
 
 export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const { user, isAuthenticated, updateUserData } = useAuth();
@@ -74,9 +75,10 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   const [commentCount, setCommentCount] = useState(0);
 
   const videoRef = useRef(null);
+  const containerRef = useRef(null);
   const hasCountedView = useRef(false);
 
-
+  const { charging, cracking, burstKey, floatingHearts, pulse, triggerLikeEffect, triggerDislikeEffect, triggerDoubleTap } = useEnergyLikeEffects(containerRef, videoRef);
 
   const isLiked = likes.includes(user?._id);
   const isDisliked = dislikes.includes(user?._id);
@@ -110,9 +112,16 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
     return () => window.removeEventListener('oravia_sound_change', syncSound);
   }, []);
 
-  const handleVideoClick = () => {
+  const handleVideoClick = (e) => {
     if (showMenu) {
       setShowMenu(false);
+      return;
+    }
+    const isDoubleTap = triggerDoubleTap(e);
+    if (isDoubleTap) {
+      if (!isLiked) {
+        handleLike(e);
+      }
       return;
     }
     if (!videoRef.current) return;
@@ -261,8 +270,11 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
     }
   };
 
-    const handleLike = async (e) => {
-    e.stopPropagation();
+  const handleLike = async (e) => {
+    if (e) e.stopPropagation();
+    if (e && e.currentTarget && typeof triggerLikeEffect === 'function') {
+      triggerLikeEffect(e.currentTarget);
+    }
     if (!isAuthenticated) {
       setDrawerAction('like snips');
       setIsAuthDrawerOpen(true);
@@ -280,7 +292,10 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   };
 
   const handleDislike = async (e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
+    if (e && e.currentTarget && typeof triggerDislikeEffect === 'function') {
+      triggerDislikeEffect(e.currentTarget);
+    }
     if (!isAuthenticated) {
       setDrawerAction('dislike snips');
       setIsAuthDrawerOpen(true);
@@ -344,7 +359,11 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
   };
 
   return (
-    <div className="reel-player-container">
+    <div 
+      className="reel-player-container select-none relative overflow-hidden" 
+      ref={containerRef}
+      style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none' }}
+    >
       {/* Video element */}
       <video
         ref={videoRef}
@@ -464,8 +483,27 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           </div>
         )}
 
-        <button className={`sidebar-btn ${isLiked ? 'liked' : ''}`} onClick={handleLike} aria-label="Like">
-          <Heart size={26} fill={isLiked ? 'currentColor' : 'none'} />
+        <button 
+          className={`sidebar-btn ${isLiked ? 'liked' : ''} select-none`} 
+          onClick={handleLike} 
+          aria-label="Like"
+          style={{ position: 'relative' }}
+        >
+          <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            {charging && Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
+              <span
+                key={`p-${burstKey}-${i}`}
+                className="charge-particle"
+                style={{
+                  "--angle": `${i * (360 / PARTICLE_COUNT)}deg`,
+                  "--delay": `${i * 18}ms`,
+                }}
+              />
+            ))}
+            <span style={{ display: 'inline-flex', animation: charging ? "elasticCharge 0.75s cubic-bezier(.22,1,.36,1)" : "none" }}>
+              <Heart size={26} fill={isLiked ? 'currentColor' : 'none'} />
+            </span>
+          </span>
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -473,12 +511,32 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
               setShowLikesSheet(true);
             }}
           >
-            {likes.length}
+            <OdometerNumber value={likes.length} color="#fff" />
           </span>
         </button>
 
-        <button className={`sidebar-btn ${isDisliked ? 'disliked' : ''}`} onClick={handleDislike} aria-label="Dislike">
-          <ThumbsDown size={26} fill={isDisliked ? 'currentColor' : 'none'} />
+        <button 
+          className={`sidebar-btn ${isDisliked ? 'disliked' : ''} select-none`} 
+          onClick={handleDislike} 
+          aria-label="Dislike"
+          style={{ position: 'relative' }}
+        >
+          <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            {cracking && Array.from({ length: SHARD_COUNT }).map((_, i) => (
+              <span
+                key={`s-${i}`}
+                className="crack-shard"
+                style={{
+                  "--sx": `${(i - SHARD_COUNT / 2) * 7}px`,
+                  "--rot": `${(i - SHARD_COUNT / 2) * 25}deg`,
+                  "--delay": `${i * 15}ms`,
+                }}
+              />
+            ))}
+            <span style={{ display: 'inline-flex', animation: cracking ? "dislikeDip 0.4s ease" : "none" }}>
+              <ThumbsDown size={26} fill={isDisliked ? 'currentColor' : 'none'} />
+            </span>
+          </span>
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -486,7 +544,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
               setShowLikesSheet(true);
             }}
           >
-            {dislikes.length}
+            <OdometerNumber value={dislikes.length} color="#fff" />
           </span>
         </button>
 
@@ -695,6 +753,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           onClose={() => setShowLikesSheet(false)}
         />
       )}
+
+      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
 
       <style>{`
         .reel-player-container {

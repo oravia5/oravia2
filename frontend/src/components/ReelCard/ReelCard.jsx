@@ -8,12 +8,15 @@ import client from '../../api/client';
 import CommentsSheet from '../CommentsSheet/CommentsSheet';
 import AuthDrawer from '../AuthDrawer/AuthDrawer';
 import { useNsfw } from '../../context/NsfwContext';
+import { OdometerNumber, FloatingHeartsOverlay, useEnergyLikeEffects, PARTICLE_COUNT, SHARD_COUNT } from '../LikeEffects/EnergyLikeEffects';
 
 export default function ReelCard({ reel, onDeleteSuccess }) {
   const { user, isAuthenticated, updateUserData } = useAuth();
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const containerRef = useRef(null);
+
+  const { charging, cracking, burstKey, floatingHearts, pulse, triggerLikeEffect, triggerDislikeEffect, triggerDoubleTap } = useEnergyLikeEffects(containerRef, videoRef);
 
   const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState(false);
   const [drawerAction, setDrawerAction] = useState('interact with posts');
@@ -260,7 +263,10 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   };
 
   const handleLike = async (e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
+    if (e && e.currentTarget && typeof triggerLikeEffect === 'function') {
+      triggerLikeEffect(e.currentTarget);
+    }
     if (!isAuthenticated) {
       setDrawerAction('like snips');
       setIsAuthDrawerOpen(true);
@@ -278,7 +284,10 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   };
 
   const handleDislike = async (e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
+    if (e && e.currentTarget && typeof triggerDislikeEffect === 'function') {
+      triggerDislikeEffect(e.currentTarget);
+    }
     if (!isAuthenticated) {
       setDrawerAction('dislike snips');
       setIsAuthDrawerOpen(true);
@@ -355,8 +364,17 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   };
 
   const handleMediaClick = (e) => {
+    if (showMenu) {
+      setShowMenu(false);
+      return;
+    }
     if (isBlurred) return;
-    const video = e.target.closest('.reel-media-container')?.querySelector('video');
+    const isDoubleTap = triggerDoubleTap(e);
+    if (isDoubleTap) {
+      if (!isLiked) handleLike(e);
+      return;
+    }
+    const video = videoRef.current || e.target.closest('.reel-media-container')?.querySelector('video');
     if (video) {
       if (isPlaying) {
         video.pause();
@@ -382,7 +400,7 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
   };
 
   return (
-    <div className="reel-card animate-fade">
+    <div className="reel-card animate-fade relative overflow-hidden" style={{ animation: pulse ? 'cardThump 0.18s ease' : 'none', position: 'relative' }}>
       {/* Header */}
       <div className="reel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
         <Link to={`/profile/${reel.author?.username}`} className="author-link" onClick={(e) => e.stopPropagation()}>
@@ -633,21 +651,56 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
       <div className="reel-actions">
         <div className="actions-left">
           <button
-            className={`action-btn ${isLiked ? 'liked' : ''}`}
+            className={`action-btn ${isLiked ? 'liked' : ''} select-none`}
             onClick={handleLike}
             aria-label="Like"
+            style={{ position: 'relative' }}
           >
-            <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-            <span>{likes.length}</span>
+            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              {charging && Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
+                <span
+                  key={`p-${burstKey}-${i}`}
+                  className="charge-particle"
+                  style={{
+                    "--angle": `${i * (360 / PARTICLE_COUNT)}deg`,
+                    "--delay": `${i * 18}ms`,
+                  }}
+                />
+              ))}
+              <span style={{ display: 'inline-flex', animation: charging ? "elasticCharge 0.75s cubic-bezier(.22,1,.36,1)" : "none" }}>
+                <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
+              </span>
+            </span>
+            <span>
+              <OdometerNumber value={likes.length} color="inherit" />
+            </span>
           </button>
 
           <button
-            className={`action-btn ${isDisliked ? 'disliked' : ''}`}
+            className={`action-btn ${isDisliked ? 'disliked' : ''} select-none`}
             onClick={handleDislike}
             aria-label="Dislike"
+            style={{ position: 'relative' }}
           >
-            <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
-            <span>{dislikes.length}</span>
+            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              {cracking && Array.from({ length: SHARD_COUNT }).map((_, i) => (
+                <span
+                  key={`s-${i}`}
+                  className="crack-shard"
+                  style={{
+                    "--sx": `${(i - SHARD_COUNT / 2) * 7}px`,
+                    "--rot": `${(i - SHARD_COUNT / 2) * 25}deg`,
+                    "--delay": `${i * 15}ms`,
+                  }}
+                />
+              ))}
+              <span style={{ display: 'inline-flex', animation: cracking ? "dislikeDip 0.4s ease" : "none" }}>
+                <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
+              </span>
+            </span>
+            <span>
+              <OdometerNumber value={dislikes.length} color="inherit" />
+            </span>
           </button>
 
           <button
@@ -705,6 +758,8 @@ export default function ReelCard({ reel, onDeleteSuccess }) {
           onCommentCountChange={setCommentCount}
         />
       )}
+
+      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
 
       <style>{`
         .reel-card {
