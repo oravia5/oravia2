@@ -1232,26 +1232,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
       <div className="post-actions">
         <div className="actions-left">
           <button 
-            className={`action-btn ${isLiked ? 'liked' : ''} select-none`} 
+            className={`action-btn ${isLiked ? 'liked' : ''}`} 
             onClick={handleLike}
             aria-label="Like"
-            style={{ position: 'relative' }}
           >
-            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              {charging && Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
-                <span
-                  key={`p-${burstKey}-${i}`}
-                  className="charge-particle"
-                  style={{
-                    "--angle": `${i * (360 / PARTICLE_COUNT)}deg`,
-                    "--delay": `${i * 18}ms`,
-                  }}
-                />
-              ))}
-              <span style={{ display: 'inline-flex', animation: charging ? "elasticCharge 0.75s cubic-bezier(.22,1,.36,1)" : "none" }}>
-                <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-              </span>
-            </span>
+            <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
             <span
               onClick={(e) => {
                 e.stopPropagation();
@@ -1259,32 +1244,16 @@ export default function PostCard({ post, onDeleteSuccess }) {
                 setShowLikesSheet(true);
               }}
             >
-              <OdometerNumber value={likes.length} color="inherit" />
+              {likes.length}
             </span>
           </button>
 
           <button 
-            className={`action-btn ${isDisliked ? 'disliked' : ''} select-none`} 
+            className={`action-btn ${isDisliked ? 'disliked' : ''}`} 
             onClick={handleDislike}
             aria-label="Dislike"
-            style={{ position: 'relative' }}
           >
-            <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              {cracking && Array.from({ length: SHARD_COUNT }).map((_, i) => (
-                <span
-                  key={`s-${i}`}
-                  className="crack-shard"
-                  style={{
-                    "--sx": `${(i - SHARD_COUNT / 2) * 7}px`,
-                    "--rot": `${(i - SHARD_COUNT / 2) * 25}deg`,
-                    "--delay": `${i * 15}ms`,
-                  }}
-                />
-              ))}
-              <span style={{ display: 'inline-flex', animation: cracking ? "dislikeDip 0.4s ease" : "none" }}>
-                <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
-              </span>
-            </span>
+            <ThumbsDown size={22} fill={isDisliked ? 'currentColor' : 'none'} />
             <span
               onClick={(e) => {
                 e.stopPropagation();
@@ -1292,7 +1261,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
                 setShowLikesSheet(true);
               }}
             >
-              <OdometerNumber value={dislikes.length} color="inherit" />
+              {dislikes.length}
             </span>
           </button>
 
@@ -1357,8 +1326,6 @@ export default function PostCard({ post, onDeleteSuccess }) {
           onClose={() => setShowLikesSheet(false)}
         />
       )}
-
-      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
 
       <style>{`
         .location-link-wrapper {

@@ -2,12 +2,12 @@ import React, { useState, useRef, useCallback } from "react";
 import { Heart, ThumbsDown } from "lucide-react";
 import "./EnergyLikeEffects.css";
 
-export const PARTICLE_COUNT = 8;
-export const SHARD_COUNT = 6;
-export const FLOAT_HEART_COUNT = 56;
-export const DISLIKE_BURST_COUNT = 40;
+export const PARTICLE_COUNT = 6;
+export const SHARD_COUNT = 4;
+export const FLOAT_HEART_COUNT = 12;
+export const DISLIKE_BURST_COUNT = 6;
 export const DOUBLE_TAP_MS = 300;
-export const HEART_TOTAL_MS = 4200;
+export const HEART_TOTAL_MS = 2200;
 
 export const noTapHighlight = {
   WebkitTapHighlightColor: "transparent",
@@ -18,46 +18,17 @@ export const noTapHighlight = {
 };
 
 export function OdometerNumber({ value, color }) {
-  const [display, setDisplay] = useState(value);
-  const [prev, setPrev] = useState(value);
-  const [animKey, setAnimKey] = useState(0);
-  const dir = useRef(1);
-
-  if (value !== display) {
-    dir.current = value > display ? 1 : -1;
-    setPrev(display);
-    setDisplay(value);
-    setAnimKey((k) => k + 1);
-  }
-
-  return (
-    <span
-      className="relative inline-block overflow-hidden text-sm font-semibold tabular-nums"
-      style={{ height: "1.2em", width: "2.4ch", color }}
-    >
-      <span
-        key={animKey}
-        className="absolute inset-0 flex flex-col"
-        style={{
-          animation: "odometerRoll 0.42s cubic-bezier(.22,1,.36,1) forwards",
-          "--dir": dir.current,
-        }}
-      >
-        <span style={{ order: dir.current === 1 ? 0 : 2 }}>{prev}</span>
-        <span style={{ order: 1 }}>{display}</span>
-      </span>
-    </span>
-  );
+  return <span style={{ color }}>{value}</span>;
 }
 
 export function makeFloatingHeart(index, originX, originY, containerWidth, containerHeight) {
   const destX = 10 + Math.random() * Math.max(containerWidth - 20, 1);
   const dx = destX - originX;
-  const rise = 30 + Math.random() * 90;
-  const fall = containerHeight - originY + 40 + Math.random() * 30;
-  const rot = (Math.random() * 2 - 1) * 70;
-  const size = 14 + Math.random() * 18;
-  const duration = 1600 + Math.random() * 1500;
+  const rise = 20 + Math.random() * 60;
+  const fall = Math.max(0, Math.min(containerHeight - originY - 20, 60));
+  const rot = (Math.random() * 2 - 1) * 40;
+  const size = 12 + Math.random() * 14;
+  const duration = 1200 + Math.random() * 800;
   const delay = Math.random() * 700;
   const colors = ["#fb7185", "#f97316", "#ef4444", "#f43f5e"];
   return {
@@ -137,7 +108,7 @@ export function makeButtonDislikeThumb(index, originX, originY, centerY, contain
 export function FloatingHeartsOverlay({ floatingHearts }) {
   if (!floatingHearts || floatingHearts.length === 0) return null;
   return (
-    <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+    <div className="floating-hearts-overlay">
       {floatingHearts.map((h) =>
         h.kind === "thumb" ? (
           <ThumbsDown

@@ -466,27 +466,8 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           </div>
         )}
 
-        <button 
-          className={`sidebar-btn ${isLiked ? 'liked' : ''} select-none`} 
-          onClick={handleLike} 
-          aria-label="Like"
-          style={{ position: 'relative' }}
-        >
-          <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            {charging && Array.from({ length: PARTICLE_COUNT }).map((_, i) => (
-              <span
-                key={`p-${burstKey}-${i}`}
-                className="charge-particle"
-                style={{
-                  "--angle": `${i * (360 / PARTICLE_COUNT)}deg`,
-                  "--delay": `${i * 18}ms`,
-                }}
-              />
-            ))}
-            <span style={{ display: 'inline-flex', animation: charging ? "elasticCharge 0.75s cubic-bezier(.22,1,.36,1)" : "none" }}>
-              <Heart size={26} fill={isLiked ? 'currentColor' : 'none'} />
-            </span>
-          </span>
+        <button className={`sidebar-btn ${isLiked ? 'liked' : ''}`} onClick={handleLike} aria-label="Like">
+          <Heart size={26} fill={isLiked ? 'currentColor' : 'none'} />
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -494,32 +475,12 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
               setShowLikesSheet(true);
             }}
           >
-            <OdometerNumber value={likes.length} color="#fff" />
+            {likes.length}
           </span>
         </button>
 
-        <button 
-          className={`sidebar-btn ${isDisliked ? 'disliked' : ''} select-none`} 
-          onClick={handleDislike} 
-          aria-label="Dislike"
-          style={{ position: 'relative' }}
-        >
-          <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            {cracking && Array.from({ length: SHARD_COUNT }).map((_, i) => (
-              <span
-                key={`s-${i}`}
-                className="crack-shard"
-                style={{
-                  "--sx": `${(i - SHARD_COUNT / 2) * 7}px`,
-                  "--rot": `${(i - SHARD_COUNT / 2) * 25}deg`,
-                  "--delay": `${i * 15}ms`,
-                }}
-              />
-            ))}
-            <span style={{ display: 'inline-flex', animation: cracking ? "dislikeDip 0.4s ease" : "none" }}>
-              <ThumbsDown size={26} fill={isDisliked ? 'currentColor' : 'none'} />
-            </span>
-          </span>
+        <button className={`sidebar-btn ${isDisliked ? 'disliked' : ''}`} onClick={handleDislike} aria-label="Dislike">
+          <ThumbsDown size={26} fill={isDisliked ? 'currentColor' : 'none'} />
           <span
             onClick={(e) => {
               e.stopPropagation();
@@ -527,7 +488,7 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
               setShowLikesSheet(true);
             }}
           >
-            <OdometerNumber value={dislikes.length} color="#fff" />
+            {dislikes.length}
           </span>
         </button>
 
@@ -736,8 +697,6 @@ export default React.memo(function ReelPlayer({ reel, isActive, onDelete }) {
           onClose={() => setShowLikesSheet(false)}
         />
       )}
-
-      <FloatingHeartsOverlay floatingHearts={floatingHearts} />
 
       <style>{`
         .reel-player-container {
